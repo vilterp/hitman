@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">AndroidsOfDeath</string>
+    <string name="signupMessage">Type in your fucking name.</string>
+    <string name="sampleName">Bugs Bunny</string>
+    <string name="startupSubmitButton">ENTER THE GAME</string>
 </resources>
