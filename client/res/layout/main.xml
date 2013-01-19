@@ -9,5 +9,10 @@
             android:layout_height="wrap_content"
             android:text="Hello World, GameMap"
             />
+
+    <fragment class="com.google.android.gms.maps.MapFragment"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"/>
+
 </LinearLayout>
 
