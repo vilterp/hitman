@@ -18,8 +18,8 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
 
     <!-- permissions for GCM -->
-    <permission android:name="my_app_package.permission.C2D_MESSAGE" android:protectionLevel="signature" />
-    <uses-permission android:name="my_app_package.permission.C2D_MESSAGE" />
+    <permission android:name="org.androidsofdeath.client.permission.C2D_MESSAGE" android:protectionLevel="signature" />
+    <uses-permission android:name="org.androidsofdeath.client.permission.C2D_MESSAGE" />
 
     <!-- moar permissions for GCM -->
     <!-- App receives GCM messages. -->
