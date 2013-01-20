@@ -3,31 +3,17 @@ package org.androidsofdeath.client;
 import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
-import android.widget.Toast;
 import com.google.android.gcm.GCMBaseIntentService;
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.List;
+import java.io.Serializable;
 
 public class GCMIntentService extends GCMBaseIntentService {
 
-    private static final String SENDER_ID = "791109992959";
-    private static final String SERVER_HOST = "vm1.kevinzhang.org";
-    private static final int SERVER_PORT = 9000;
     public static final String REGISTER_TAG = "REGISTER";
+    public static final String REG_RECEIVED_ACTION = "org.androidsofdeath.client.action.REG_RECEIVED";
 
     public GCMIntentService() {
-        super(SENDER_ID);
+        super(Util.SENDER_ID);
     }
 
     @Override
@@ -42,32 +28,25 @@ public class GCMIntentService extends GCMBaseIntentService {
 
     @Override
     protected void onRegistered(Context context, final String registrationId) {
-        Toast.makeText(context, String.format("onRegistered: %s", registrationId), 100).show();
-        new Thread(new Runnable() {
-            public void run() {
-                Log.d(REGISTER_TAG, "sending registration");
-                HttpClient httpClient = new DefaultHttpClient();
-                String postUrl = String.format("http://%s:%d/update_gcmid/", SERVER_HOST, SERVER_PORT);
-                HttpPost httpPost = new HttpPost(postUrl);
+        GCMRegistration registration = new GCMRegistration(registrationId);
+        Intent broadcast = new Intent();
+        broadcast.putExtra("registration", registration);
+        broadcast.setAction(REG_RECEIVED_ACTION);
+        sendBroadcast(broadcast);
+    }
 
-                // TODO: actually send username
-                List<NameValuePair> args = new ArrayList<NameValuePair>();
-                args.add(new BasicNameValuePair("user", "admin"));
-                args.add(new BasicNameValuePair("regid", registrationId));
-                try {
-                    httpPost.setEntity(new UrlEncodedFormEntity(args));
-                    HttpResponse response = httpClient.execute(httpPost);
-                    Toast.makeText(GCMIntentService.this, "HTTP response should have been sent", 100).show();
-                } catch (UnsupportedEncodingException e) {
-                    Log.e(REGISTER_TAG, "exception", e);
-                } catch (ClientProtocolException e) {
-                    Log.e(REGISTER_TAG, "exception", e);
-                } catch (IOException e) {
-                    Log.e(REGISTER_TAG, "exception", e);
-                }
+    public class GCMRegistration implements Serializable {
 
-            }
-        }).run();
+        private String regId;
+
+        public GCMRegistration(String regId) {
+            this.regId = regId;
+        }
+
+        public String getRegId() {
+            return regId;
+        }
+
     }
 
     @Override
