@@ -1,9 +1,10 @@
-package org.androidsofdeath.client;
+package org.androidsofdeath.client.activity;
 
 import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 import com.google.android.gcm.GCMBaseIntentService;
+import org.androidsofdeath.client.model.GameSession;
 
 import java.io.Serializable;
 
@@ -13,7 +14,7 @@ public class GCMIntentService extends GCMBaseIntentService {
     public static final String REG_RECEIVED_ACTION = "org.androidsofdeath.client.action.REG_RECEIVED";
 
     public GCMIntentService() {
-        super(Util.SENDER_ID);
+        super(GameSession.SENDER_ID);
     }
 
     @Override

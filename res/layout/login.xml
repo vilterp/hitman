@@ -8,13 +8,30 @@
     <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/signupMessage"
+            android:text="Log In"
             android:id="@+id/textView" android:layout_gravity="left|center_vertical"/>
+    <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/signupMessage"
+            android:layout_gravity="left|center_vertical"/>
     <EditText
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:hint="@string/sampleName"
             android:id="@+id/nameField" android:inputType="text"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Password:"
+            android:layout_gravity="left|center_vertical"/>
+
+    <EditText
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/passwordField" android:inputType="textPassword"/>
+
     <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

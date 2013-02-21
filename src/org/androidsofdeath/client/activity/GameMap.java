@@ -1,9 +1,8 @@
-package org.androidsofdeath.client;
+package org.androidsofdeath.client.activity;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.util.Log;
-import com.google.android.gcm.GCMRegistrar;
+import org.androidsofdeath.client.R;
 
 public class GameMap extends Activity {
 

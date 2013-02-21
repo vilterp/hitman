@@ -1,4 +1,4 @@
-package org.androidsofdeath.client;
+package org.androidsofdeath.client.activity;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -7,8 +7,9 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import org.androidsofdeath.client.R;
 
-public class Startup extends Activity {
+public class Login extends Activity {
 
     private static final int SIGNING_IN_REQ_CODE = 1;
     private Button submitButton;
@@ -17,12 +18,12 @@ public class Startup extends Activity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.startup);
+        setContentView(R.layout.login);
         submitButton = (Button) findViewById(R.id.startupSubmitButton);
         nameField = (EditText) findViewById(R.id.nameField);
         submitButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                Intent intent = new Intent(Startup.this, SigningIn.class);
+                Intent intent = new Intent(Login.this, LoggingIn.class);
                 intent.putExtra("name", nameField.getText().toString());
                 startActivityForResult(intent, SIGNING_IN_REQ_CODE);
             }
@@ -35,7 +36,7 @@ public class Startup extends Activity {
             throw new RuntimeException("wrong req code");
         } else {
             GameSession session = (GameSession) data.getExtras().get("session");
-            Log.d(SigningIn.TAG, session.toString());
+            Log.d(LoggingIn.TAG, session.toString());
             // launch GameMap with session...
             Intent intent = new Intent(this, GameMap.class);
             intent.putExtra("session", session);
