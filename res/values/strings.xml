@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">AndroidsOfDeath</string>
+    <string name="app_name">Hitman: Android</string>
     <string name="signupMessage">Nickname:</string>
     <string name="sampleName">Bugs Bunny</string>
     <string name="startupSubmitButton">ENTER THE GAME</string>

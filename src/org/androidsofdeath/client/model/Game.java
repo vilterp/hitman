@@ -1,26 +1,33 @@
 package org.androidsofdeath.client.model;
 
-import java.util.Date;
+import android.location.Location;
+import org.joda.time.DateTime;
 
 public class Game {
 
+    private int id;
     private String name;
-    private String location;
+    private Location location;
     private int numPlayers;
-    private Date startDate;
+    private DateTime startDate;
 
-    public Game(String name, String location, int numPlayers, Date startDate) {
+    public Game(int id, String name, Location location, int numPlayers, DateTime startDate) {
+        this.id = id;
         this.name = name;
         this.location = location;
         this.numPlayers = numPlayers;
         this.startDate = startDate;
     }
 
+    public int getId() {
+        return id;
+    }
+
     public String getName() {
         return name;
     }
 
-    public String getLocation() {
+    public Location getLocation() {
         return location;
     }
 
@@ -28,7 +35,7 @@ public class Game {
         return numPlayers;
     }
 
-    public Date getStartDate() {
+    public DateTime getStartDate() {
         return startDate;
     }
 

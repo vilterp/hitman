@@ -17,6 +17,9 @@ public class Startup extends Activity {
 
     private static final String PREFS_NAME = "HitmanPrefs";
     private static final int GET_LOGIN_CREDENTIALS = 1;
+    public static final String USERNAME = "username";
+    public static final String PASSWORD = "password";
+    public static final String GAME_ID = "gameId";
 
     private SharedPreferences prefs;
     private BroadcastReceiver receiver;
@@ -53,9 +56,9 @@ public class Startup extends Activity {
     }
 
     private void getCredentialsAndLogin(String gcmId) {
-        String username = prefs.getString("username", null);
+        String username = prefs.getString(USERNAME, null);
         // TODO: probably should store this more securely :P
-        String password = prefs.getString("password", null);
+        String password = prefs.getString(PASSWORD, null);
         if(username == null || password == null) {
             getCredentials(gcmId);
         } else {
@@ -89,6 +92,10 @@ public class Startup extends Activity {
                     // TODO: some kind of message ("wrong password", etc)
                     getCredentials(credentials.getGcmId());
                 } else {
+                    SharedPreferences.Editor editor = prefs.edit();
+                    editor.putString(USERNAME, credentials.getUsername());
+                    editor.putString(PASSWORD, credentials.getPassword());
+                    editor.commit();
                     enterGameOrAskForGame(result);
                 }
             }
@@ -96,7 +103,7 @@ public class Startup extends Activity {
     }
 
     private void enterGameOrAskForGame(GameSession session) {
-        int gameId = prefs.getInt("gameId", -1);
+        int gameId = prefs.getInt(GAME_ID, -1);
         if(gameId == -1) {
             Intent launchGameList = new Intent(this, GameList.class);
             launchGameList.putExtra("session", session);

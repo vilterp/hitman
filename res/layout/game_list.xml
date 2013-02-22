@@ -5,9 +5,9 @@
               android:layout_width="fill_parent"
               android:layout_height="fill_parent">
 
-    <TextView
-            android:layout_width="wrap_content"
+    <ListView
+            android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:text="Hai, this is the game list."
-            android:id="@+id/textView" android:layout_gravity="left|center_vertical"/>
+            android:id="@+id/game_list_list"
+            android:visibility="invisible"/>
 </LinearLayout>
