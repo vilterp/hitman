@@ -1,4 +1,4 @@
-package org.androidsofdeath.client.activity;
+package org.androidsofdeath.client.service;
 
 import android.content.Context;
 import android.content.Intent;
@@ -29,25 +29,10 @@ public class GCMIntentService extends GCMBaseIntentService {
 
     @Override
     protected void onRegistered(Context context, final String registrationId) {
-        GCMRegistration registration = new GCMRegistration(registrationId);
         Intent broadcast = new Intent();
-        broadcast.putExtra("registration", registration);
+        broadcast.putExtra("registration", registrationId);
         broadcast.setAction(REG_RECEIVED_ACTION);
         sendBroadcast(broadcast);
-    }
-
-    public class GCMRegistration implements Serializable {
-
-        private String regId;
-
-        public GCMRegistration(String regId) {
-            this.regId = regId;
-        }
-
-        public String getRegId() {
-            return regId;
-        }
-
     }
 
     @Override

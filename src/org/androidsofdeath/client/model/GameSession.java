@@ -10,6 +10,7 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -19,46 +20,48 @@ import java.util.Map;
  * The static methods in here are blocking. Call them
  * within an AsyncTask.
  */
-public class GameSession {
+public class GameSession implements Serializable {
 
-    public static final String TAG = "GameSession";
+    public static final String TAG = "HITMAN_GameSession";
 
     public static final String SENDER_ID = "791109992959";
-    private static final String SERVER_HOST = "vm1.kevinzhang.org";
-    private static final int SERVER_PORT = 9000;
+    private static final String SERVER_HOST = "hitman.kevinzhang.org";
+    private static final int SERVER_PORT = 80;
 
-    private String username;
-    private String gcmId;
+    private LoginCredentials credentials;
 
-    public GameSession(String username, String gcmId) {
-        this.username = username;
-        this.gcmId = gcmId;
+    public GameSession(LoginCredentials credentials) {
+        this.credentials = credentials;
     }
 
-    public static GameSession doSignup(String username, String password, String gcmId) {
+    public static GameSession doSignup(LoginCredentials credentials) {
         Map<String, String> params = new HashMap<String, String>();
-        params.put("user", username);
-        params.put("password", password);
-        params.put("gcm_regid", gcmId);
+        params.put("user", credentials.getUsername());
+        params.put("password", credentials.getPassword());
+        params.put("gcm_regid", credentials.getGcmId());
         String path = "/users/signup";
         // TODO: flow when signup doesn't work (e.g. username already taken)
         execAppPost(path, params);
-        return new GameSession(username, gcmId);
+        return new GameSession(credentials);
     }
 
-    public static GameSession doLogin(String username, String password, String gcmId) {
+    public static GameSession doLogin(LoginCredentials credentials) {
+        // TODO: not implemented on the server yet
         Map<String, String> params = new HashMap<String, String>();
-        params.put("gcm_regid", gcmId);
-        params.put("user", username);
-        params.put("password", password);
-        execAppPost("/users/login", params);
-        // TODO: flow when login doesn't work
-        return new GameSession(username, gcmId);
+        params.put("gcm_regid", credentials.getGcmId());
+        params.put("user", credentials.getUsername());
+        params.put("password", credentials.getPassword());
+        HttpResponse response = execAppPost("/users/login", params);
+        if(response.getStatusLine().getStatusCode() == 200) {
+            return new GameSession(credentials);
+        } else {
+            return null;
+        }
     }
 
     public void updateLocation(Location location) {
         Map<String, String> params = new HashMap<String, String>();
-        params.put("gcm_regid", gcmId);
+        params.put("gcm_regid", credentials.getGcmId());
         params.put("lat", Double.toString(location.getLatitude()));
         params.put("lon", Double.toString(location.getLongitude()));
         execAppPost("/locations/update", params);

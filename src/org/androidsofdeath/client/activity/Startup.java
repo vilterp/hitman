@@ -1,65 +1,111 @@
 package org.androidsofdeath.client.activity;
 
 import android.app.Activity;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
+import android.content.*;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import com.google.android.gcm.GCMRegistrar;
 import org.androidsofdeath.client.R;
 import org.androidsofdeath.client.model.GameSession;
+import org.androidsofdeath.client.model.LoginCredentials;
+import org.androidsofdeath.client.service.GCMIntentService;
 
 public class Startup extends Activity {
 
-    private static final String TAG = "STARTUP";
+    private static final String TAG = "HITMAN_STARTUP";
+
+    private static final String PREFS_NAME = "HitmanPrefs";
+    private static final int GET_LOGIN_CREDENTIALS = 1;
+
+    private SharedPreferences prefs;
+    private BroadcastReceiver receiver;
 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.waiting);
-        this.registerReceiver(new BroadcastReceiver() {
+        prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        receiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String gcmId = intent.getStringExtra("registration");
+                // send HTTP POST to log in
+                getCredentialsAndLogin(gcmId);
+                unregisterReceiver(receiver);
+                receiver = null;
+            }
 
-                    @Override
-                    public void onReceive(Context context, Intent intent) {
-            GCMIntentService.GCMRegistration registration =
-                    (GCMIntentService.GCMRegistration) intent.getSerializableExtra("registration");
-                        // send HTTP POST to log in
-                        new AsyncTask<LoginCredentials, Void, Void>() {
-
-                            @Override
-                            protected Void doInBackground(LoginCredentials... params) {
-                                assert params.length == 0;
-                                org.androidsofdeath.client.activity.GameSession session = login(params[0]);
-                                // finish this activity, sending the session back...
-                                Intent res = new Intent();
-                                res.putExtra("session", session);
-                                LoggingIn.this.setResult(Activity.RESULT_OK, res);
-                                LoggingIn.this.finish();
-                                return null;
-                            }
-
-                        }.execute(new LoginCredentials(registration.getRegId(), nameEntered));
-                    }
-
-                }, new IntentFilter(GCMIntentService.REG_RECEIVED_ACTION));
-
+        };
+        this.registerReceiver(receiver, new IntentFilter(GCMIntentService.REG_RECEIVED_ACTION));
         // register with GCM
         GCMRegistrar.checkDevice(this);
         GCMRegistrar.checkManifest(this);
-        final String regId = GCMRegistrar.getRegistrationId(this);
+        final String gcmId = GCMRegistrar.getRegistrationId(this);
         Log.d(TAG, "checking registration");
-        if (regId.equals("")) {
+        if (gcmId.equals("")) {
             Log.d(TAG, "registering");
             GCMRegistrar.register(this, GameSession.SENDER_ID);
         } else {
             Log.d(TAG, "Already registered");
             // launch login activity
-            Intent intent = new Intent(Login.class)
+            getCredentialsAndLogin(gcmId);
+        }
+    }
+
+    private void getCredentialsAndLogin(String gcmId) {
+        String username = prefs.getString("username", null);
+        // TODO: probably should store this more securely :P
+        String password = prefs.getString("password", null);
+        if(username == null || password == null) {
+            getCredentials(gcmId);
+        } else {
+            doLogin(new LoginCredentials(gcmId, username, password));
+        }
+    }
+
+    private void getCredentials(String gcmId) {
+        Intent launchLogin = new Intent(this, Login.class);
+        launchLogin.putExtra("gcmId", gcmId);
+        startActivityForResult(launchLogin, GET_LOGIN_CREDENTIALS);
+    }
+
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        assert requestCode == GET_LOGIN_CREDENTIALS;
+        assert resultCode == RESULT_OK;
+        // TODO: save credentials in localprefs
+        LoginCredentials credentials = (LoginCredentials) data.getSerializableExtra("credentials");
+        doLogin(credentials);
+    }
+
+    private void doLogin(final LoginCredentials credentials) {
+        new AsyncTask<LoginCredentials, Void, GameSession>() {
+            @Override
+            protected GameSession doInBackground(LoginCredentials... params) {
+                assert params.length == 1;
+                return GameSession.doLogin(params[0]);
+            }
+            protected void onPostExecute(GameSession result) {
+                if(result == null) {
+                    // TODO: some kind of message ("wrong password", etc)
+                    getCredentials(credentials.getGcmId());
+                } else {
+                    enterGameOrAskForGame(result);
+                }
+            }
+        }.execute(credentials);
+    }
+
+    private void enterGameOrAskForGame(GameSession session) {
+        int gameId = prefs.getInt("gameId", -1);
+        if(gameId == -1) {
+            Intent launchGameList = new Intent(this, GameList.class);
+            launchGameList.putExtra("session", session);
+            startActivity(launchGameList);
+        } else {
+            Intent launchGameDetail = new Intent(this, GameDetail.class);
+            launchGameDetail.putExtra("session", session);
+            startActivity(launchGameDetail);
         }
     }
 
 }
-
-

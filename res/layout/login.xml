@@ -9,7 +9,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Log In"
-            android:id="@+id/textView" android:layout_gravity="left|center_vertical"/>
+            android:layout_gravity="left|center_vertical"/>
     <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -19,7 +19,7 @@
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:hint="@string/sampleName"
-            android:id="@+id/nameField" android:inputType="text"/>
+            android:id="@+id/login_nameField" android:inputType="text"/>
 
     <TextView
         android:layout_width="wrap_content"
@@ -30,11 +30,11 @@
     <EditText
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:id="@+id/passwordField" android:inputType="textPassword"/>
+            android:id="@+id/login_passwordField" android:inputType="textPassword"/>
 
     <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/startupSubmitButton"
-            android:id="@+id/startupSubmitButton" android:layout_gravity="left|center_vertical"/>
+            android:id="@+id/login_submitButton" android:layout_gravity="left|center_vertical"/>
 </LinearLayout>

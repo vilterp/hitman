@@ -19,7 +19,7 @@
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:inputType="text"
-            android:id="@+id/signup-username" android:layout_gravity="left|center_vertical"/>
+            android:id="@+id/signup_username" android:layout_gravity="left|center_vertical"/>
     <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -29,10 +29,10 @@
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:inputType="textPassword"
-            android:id="@+id/signup-password" android:layout_gravity="left|center_vertical"/>
+            android:id="@+id/signup_password" android:layout_gravity="left|center_vertical"/>
     <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Sign Up"
-            android:id="@+id/signup-submit" android:layout_gravity="left|center_vertical"/>
+            android:id="@+id/signup_submit" android:layout_gravity="left|center_vertical"/>
 </LinearLayout>

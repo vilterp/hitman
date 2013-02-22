@@ -1,4 +1,4 @@
-package org.androidsofdeath.client.activity;
+package org.androidsofdeath.client.service;
 
 import android.app.Service;
 import android.content.Intent;
