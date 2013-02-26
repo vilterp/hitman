@@ -75,7 +75,6 @@ public class Startup extends Activity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         assert requestCode == GET_LOGIN_CREDENTIALS;
         assert resultCode == RESULT_OK;
-        // TODO: save credentials in localprefs
         LoginCredentials credentials = (LoginCredentials) data.getSerializableExtra("credentials");
         doLogin(credentials);
     }

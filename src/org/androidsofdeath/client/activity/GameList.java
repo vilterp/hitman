@@ -1,13 +1,18 @@
 package org.androidsofdeath.client.activity;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.SimpleAdapter;
+import android.widget.Toast;
 import org.androidsofdeath.client.R;
 import org.androidsofdeath.client.model.Game;
 import org.androidsofdeath.client.model.GameSession;
@@ -30,13 +35,19 @@ public class GameList extends Activity {
     }
 
     public void onCreate(Bundle savedInstanceState) {
+
+        // TODO: show loading indicator
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.game_list);
         session = (GameSession) getIntent().getSerializableExtra("session");
         gameList = (ListView) findViewById(R.id.game_list_list);
         // spinner = (ProgressBar) findViewById(R.id.game_list_progress);
+        loadList();
+    }
+
+    private void loadList() {
         enterLoadingState();
-        // TODO: refresh button
         new AsyncTask<Void, Void, Set<Game>>() {
             @Override
             protected Set<Game> doInBackground(Void... params) {
@@ -56,6 +67,28 @@ public class GameList extends Activity {
         }.execute();
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.game_list, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.game_list_new_game:
+                Intent launchNewGame = new Intent(this, NewGame.class);
+                launchNewGame.putExtra("session", session);
+                startActivity(launchNewGame);
+                break;
+            case R.id.game_list_refresh:
+                loadList();
+                break;
+        }
+        return true;
+    }
+
     private void updateList(Set<Game> games) {
         String[] from = {"name", "location", "numPlayers", "startDate"};
         int[] to = {R.id.game_list_item_name, R.id.game_list_item_location,
@@ -66,7 +99,7 @@ public class GameList extends Activity {
             // TODO: nicer formatting
             row.put("name", game.getName());
             row.put("location", game.getLocation().toString());
-            row.put("numPlayers", Integer.toString(game.getNumPlayers()));
+            row.put("numPlayers", Integer.toString(game.getPlayers().size()));
             row.put("startDate", game.getStartDate().toString());
             data.add(row);
         }

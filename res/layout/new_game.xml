@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="vertical"
+              android:layout_width="fill_parent"
+              android:layout_height="fill_parent">
+
+    <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Game Name"
+            android:layout_gravity="left|center_vertical"/>
+    <EditText
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:hint="Awesomest Game Ever"
+            android:singleLine="true"
+            android:id="@+id/new_game_game_name" android:layout_gravity="left|center_vertical"/>
+    <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Start Time"
+            android:layout_gravity="left|center_vertical"/>
+    <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" android:layout_gravity="left|center_vertical">
+        <DatePicker
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:spinnersShown="false"
+                android:id="@+id/new_game_date"/>
+        <TimePicker
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/new_game_time" android:layout_gravity="right|center_vertical"/>
+    </LinearLayout>
+    <TextView android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:text="Waiting for GPS location..."
+              android:id="@+id/new_game_waiting_msg"
+              android:layout_gravity="left|center_vertical"/>
+    <Button android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Create Game"
+            android:id="@+id/new_game_submit_button" android:layout_gravity="center_horizontal|bottom"/>
+</LinearLayout>
