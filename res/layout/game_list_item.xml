@@ -1,24 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              android:orientation="horizontal"
+              android:orientation="vertical"
               android:layout_width="fill_parent"
               android:layout_height="fill_parent">
+    <LinearLayout android:layout_width="fill_parent"
+                  android:layout_height="fill_parent"
+                  android:orientation="horizontal">
+        <TextView android:id="@+id/game_list_item_name"
+                  android:layout_height="wrap_content"
+                  android:layout_width="wrap_content"
+                  android:text="Game Name"
+                  style="@android:style/TextAppearance.DeviceDefault.SearchResult.Title"
+                  android:layout_gravity="left"/>
+        <TextView android:id="@+id/game_list_item_startdate"
+                  android:layout_height="wrap_content"
+                  android:layout_width="wrap_content"
+                  android:text="Tomorrow at 12am"
+                  style="@android:style/TextAppearance.DeviceDefault.SearchResult.Subtitle"
+                  android:layout_gravity="right"/>
+    </LinearLayout>
 
-    <TextView android:id="@+id/game_list_item_name"
-              android:layout_height="wrap_content"
-              android:layout_width="wrap_content"/>
-
-    <TextView android:id="@+id/game_list_item_players"
-              android:layout_height="wrap_content"
-              android:layout_width="wrap_content"/>
-
-    <TextView android:id="@+id/game_list_item_startdate"
-              android:layout_height="wrap_content"
-              android:layout_width="wrap_content"/>
-
-    <TextView android:id="@+id/game_list_item_location"
-              android:layout_height="wrap_content"
-              android:layout_width="wrap_content"/>
-
+    <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:orientation="horizontal">
+        <TextView android:id="@+id/game_list_item_players"
+                  android:layout_height="wrap_content"
+                  android:layout_width="wrap_content"
+                  android:text="Player1, Player2, Player3 ...."
+                  style="@android:style/TextAppearance.DeviceDefault.SearchResult.Subtitle"
+                  android:layout_gravity="left"/>
+        <TextView android:id="@+id/game_list_item_location"
+                  android:layout_height="wrap_content"
+                  android:layout_width="wrap_content"
+                  android:text="lat,long"
+                  android:layout_gravity="right"
+                  style="@android:style/TextAppearance.DeviceDefault.SearchResult.Subtitle"/>
+    </LinearLayout>
 </LinearLayout>

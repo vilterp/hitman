@@ -5,8 +5,7 @@ import android.util.Log;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.*;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.joda.time.DateTime;
@@ -33,7 +32,7 @@ public class GameSession implements Serializable {
     private static final String SERVER_HOST = "hitman.kevinzhang.org";
     private static final int SERVER_PORT = 80;
     public static final String HITMAN_API_PROVIDER = "HITMAN_API_PROVIDER";
-    public static final String AUTH_HEADER = "GCMID";
+    public static final String AUTH_HEADER = "X-GCMID";
 
     private LoginCredentials credentials;
     private Game currentGame;
@@ -43,41 +42,35 @@ public class GameSession implements Serializable {
         this.currentGame = game;
     }
 
-    public static GameSession doSignup(LoginCredentials credentials) {
+    public static GameSession doSignup(LoginCredentials credentials) throws IOException, ApiException {
         Map<String, String> params = new HashMap<String, String>();
         params.put("user", credentials.getUsername());
         params.put("password", credentials.getPassword());
         params.put("gcm_regid", credentials.getGcmId());
         String path = "/users/signup";
-        // TODO: flow when signup doesn't work (e.g. username already taken)
-        execNoAuthPost(path, params);
+        expectCodes(execNoAuthReq(path, params, HTTPMethod.POST), 200);
         return new GameSession(credentials, null);
     }
 
-    public static GameSession doLogin(LoginCredentials credentials) {
-        // TODO: not implemented on the server yet
+    public static GameSession doLogin(LoginCredentials credentials) throws IOException, ApiException {
         Map<String, String> params = new HashMap<String, String>();
         params.put("gcm_regid", credentials.getGcmId());
         params.put("username", credentials.getUsername());
         params.put("password", credentials.getPassword());
-        HttpResponse response = execNoAuthPost("/users/login", params);
-        if(response.getStatusLine().getStatusCode() == 200) {
-            return new GameSession(credentials, null);
-        } else {
-            return null;
-        }
+        expectCodes(execNoAuthReq("/users/login", params, HTTPMethod.POST), 200);
+        return new GameSession(credentials, null);
     }
 
-    public void updateLocation(Location location) {
+    public void updateLocation(Location location) throws IOException {
         Map<String, String> params = new HashMap<String, String>();
         params.put("gcm_regid", credentials.getGcmId());
         params.put("lat", Double.toString(location.getLatitude()));
         params.put("lon", Double.toString(location.getLongitude()));
-        execAuthdPost("/locations/update", params);
+        execAuthdReq("/locations/update", params, HTTPMethod.POST);
     }
 
-    public Set<Game> getGameList() throws IOException, JSONException {
-        JSONArray gamesJson = getJSONArray("/games/");
+    public Set<Game> getGameList() throws IOException, JSONException, ApiException {
+        JSONArray gamesJson = new JSONArray(getBody(expectCodes(execAuthdReq("/games/", null, HTTPMethod.GET), 200)));
         Set<Game> games = new HashSet<Game>();
         for (int i = 0; i < gamesJson.length(); i++) {
             games.add(gameFromJsonObject(gamesJson.getJSONObject(i)));
@@ -89,40 +82,35 @@ public class GameSession implements Serializable {
         Map<String, String> params = new HashMap<String, String>();
         params.put("name", game.getName());
         params.put("start_time", game.getStartDate().toString(ISODateTimeFormat.dateTime()));
-        params.put("location_lat", Double.toString(game.getLocation().getLatitude()));
-        params.put("location_long", Double.toString(game.getLocation().getLongitude()));
-        HttpResponse resp = execAuthdPost("/games/create/", params);
-        if(resp.getStatusLine().getStatusCode() == 201) {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(resp.getEntity().getContent(), "UTF-8"));
-            String respContents = reader.readLine();
-            return gameFromJsonObject(new JSONObject(respContents));
-        } else {
-            throw new ApiException(resp.getStatusLine().getStatusCode());
-        }
+        params.put("location", String.format("%f,%f", game.getLocation().getLatitude(),
+                game.getLocation().getLongitude()));
+        return gameFromJsonObject(new JSONObject(
+                getBody(expectCodes(execAuthdReq("/games/create/", params, HTTPMethod.POST), 201))));
     }
 
-    public void joinGame(Game game) throws ApiException {
-        int respCode = execAuthdPost(String.format("/games/%d/join", game.getId()), new HashMap<String, String>())
-                .getStatusLine().getStatusCode();
-        if(respCode != 200) {
-            throw new ApiException(respCode);
-        }
+    public void joinGame(Game game) throws ApiException, IOException {
+        expectCodes(execAuthdReq(String.format("/games/%d/join", game.getId()),
+                new HashMap<String, String>(), HTTPMethod.PUT), 200);
     }
 
-    public Game getGame(int id) throws IOException, JSONException {
-        return gameFromJsonObject(getJSONObject(String.format("/games/%d/", id)));
+    public Game getGame(int id) throws IOException, JSONException, ApiException {
+        return gameFromJsonObject(new JSONObject(getBody(expectCodes(execAuthdReq(
+                String.format("/games/%d/", id), null, HTTPMethod.GET), 200))));
     }
     
     private static Game gameFromJsonObject(JSONObject obj) throws JSONException {
         Location loc = new Location(HITMAN_API_PROVIDER);
-        loc.setLatitude(obj.getDouble("location_lat"));
-        loc.setLongitude(obj.getDouble("location_long"));
+        String[] split = obj.getString("location").split(",");
+        loc.setLatitude(Double.parseDouble(split[0]));
+        loc.setLongitude(Double.parseDouble(split[1]));
         DateTime startDate = DateTime.parse(obj.getString("start_time"));
         Set<Player> players = new HashSet<Player>();
-        JSONArray playersJson = obj.getJSONArray("players");
-        for (int j = 0; j < playersJson.length(); j++) {
-            JSONObject p = playersJson.getJSONObject(j);
-            players.add(new Player(p.getString("username"), p.getInt("id")));
+        if(obj.has("players")) {
+            JSONArray playersJson = obj.getJSONArray("players");
+            for (int j = 0; j < playersJson.length(); j++) {
+                JSONObject p = playersJson.getJSONObject(j);
+                players.add(new Player(p.getString("username"), p.getInt("id")));
+            }
         }
         return new Game(
             obj.getInt("id"),
@@ -134,28 +122,23 @@ public class GameSession implements Serializable {
         );
     }
 
-    private JSONObject getJSONObject(String path) throws IOException, JSONException {
-        return new JSONObject(getJSONString(path));
-    }
-    
-    private JSONArray getJSONArray(String path) throws IOException, JSONException {
-        return new JSONArray(getJSONString(path));
-    }
-
-    private String getJSONString(String path) throws IOException {
-        assert path.charAt(0) == '/';
-        DefaultHttpClient httpClient = new DefaultHttpClient();
-        String url = String.format("http://%s:%d%s?format=json", SERVER_HOST, SERVER_PORT, path);
-        HttpGet httpGet = new HttpGet(url);
-        httpGet.setHeader(AUTH_HEADER, credentials.getGcmId());
-        // http://stackoverflow.com/questions/9605913/how-to-parse-json-in-android
-        HttpResponse response = httpClient.execute(httpGet);
-        BufferedReader reader = new BufferedReader(new InputStreamReader(response.getEntity().getContent(), "UTF-8"));
+    private static String getBody(HttpResponse resp) throws IOException {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(resp.getEntity().getContent(), "UTF-8"));
         return reader.readLine();
     }
 
-    private HttpResponse execAuthdPost(String path, Map<String, String> params) {
-        return doPost(path, params, this);
+    private static HttpResponse expectCodes(HttpResponse resp, int... codes) throws ApiException {
+        int respCode = resp.getStatusLine().getStatusCode();
+        for (int code : codes) {
+            if(code == respCode) {
+                return resp;
+            }
+        }
+        throw new ApiException(resp, codes);
+    }
+
+    private HttpResponse execAuthdReq(String path, Map<String, String> params, HTTPMethod method) throws IOException {
+        return doReq(path, params, this, method);
     }
 
     /**
@@ -165,33 +148,48 @@ public class GameSession implements Serializable {
      * @param params POST params
      * @return Http body object
      */
-    private static HttpResponse execNoAuthPost(String path, Map<String, String> params) {
-        return doPost(path, params, null);
+    private static HttpResponse execNoAuthReq(String path, Map<String, String> params, HTTPMethod method)
+            throws IOException {
+        return doReq(path, params, null, method);
     }
 
-    private static HttpResponse doPost(String path, Map<String, String> params, GameSession session) {
+    private static HttpResponse doReq(String path, Map<String, String> params, GameSession session, HTTPMethod method)
+            throws IOException {
         assert path.charAt(0) == '/';
+        Log.i(TAG, String.format("%s %s %s", method, path, params));
         DefaultHttpClient httpClient = new DefaultHttpClient();
-        String postUrl = String.format("http://%s:%d%s/", SERVER_HOST, SERVER_PORT, path);
-        HttpPost httpPost = new HttpPost(postUrl);
+        String url = String.format("http://%s:%d%s/", SERVER_HOST, SERVER_PORT, path);
+        if(params == null) {
+            params = new HashMap<String, String>();
+        }
+        HttpUriRequest httpReq = null;
+        if(method.equals(HTTPMethod.GET)) {
+            HttpGet get = new HttpGet(url);
+            for (Map.Entry<String, String> param: params.entrySet()) {
+                get.getParams().setParameter(param.getKey(), param.getValue());
+            }
+            httpReq = get;
+        } else {
+            HttpEntityEnclosingRequestBase postOrPut = null;
+            if(method.equals(HTTPMethod.PUT)) {
+                postOrPut = new HttpPut(url);
+            } else {
+                postOrPut = new HttpPost(url);
+            }
+            List<NameValuePair> args = new ArrayList<NameValuePair>();
+            for (Map.Entry<String, String> param : params.entrySet()) {
+                args.add(new BasicNameValuePair(param.getKey(), param.getValue()));
+            }
+            postOrPut.setEntity(new UrlEncodedFormEntity(args));
+            httpReq = postOrPut;
+        }
 
+        httpReq.setHeader("accept", "application/json");
         if(session != null) {
-            httpPost.setHeader(AUTH_HEADER, session.credentials.getGcmId());
+            httpReq.setHeader(AUTH_HEADER, session.credentials.getGcmId());
         }
 
-        List<NameValuePair> args = new ArrayList<NameValuePair>();
-        for (Map.Entry<String, String> param : params.entrySet()) {
-            args.add(new BasicNameValuePair(param.getKey(), param.getValue()));
-        }
-
-        try {
-            httpPost.setEntity(new UrlEncodedFormEntity(args));
-            HttpResponse response = httpClient.execute(httpPost);
-            return response;
-        } catch (IOException e) {
-            Log.e(TAG, e.toString());
-            return null; // TODO: probably not the best way to handle errors
-        }
+        return httpClient.execute(httpReq);
     }
 
     public LoginCredentials getCredentials() {
@@ -206,19 +204,10 @@ public class GameSession implements Serializable {
         return new GameSession(credentials, res);
     }
 
-    public class ApiException extends Exception {
-
-        private int status;
-
-        public ApiException(int status) {
-            super(String.format("Unexpected status code: %d", status));
-            this.status = status;
-        }
-
-        public int getStatus() {
-            return status;
-        }
-
+    enum HTTPMethod {
+        GET,
+        POST,
+        PUT
     }
 
 }

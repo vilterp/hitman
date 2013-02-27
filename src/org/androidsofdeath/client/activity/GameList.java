@@ -14,8 +14,11 @@ import android.widget.ProgressBar;
 import android.widget.SimpleAdapter;
 import android.widget.Toast;
 import org.androidsofdeath.client.R;
+import org.androidsofdeath.client.model.ApiException;
 import org.androidsofdeath.client.model.Game;
 import org.androidsofdeath.client.model.GameSession;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 import org.json.JSONException;
 
 import java.io.IOException;
@@ -59,6 +62,9 @@ public class GameList extends Activity {
                 } catch (JSONException e) {
                     Log.e(TAG, e.toString());
                     return null;
+                } catch (ApiException e) {
+                    Log.e(TAG, e.toString());
+                    return null;
                 }
             }
             protected void onPostExecute(Set<Game> games) {
@@ -98,9 +104,10 @@ public class GameList extends Activity {
             Map<String, String> row = new HashMap<String, String>();
             // TODO: nicer formatting
             row.put("name", game.getName());
-            row.put("location", game.getLocation().toString());
-            row.put("numPlayers", Integer.toString(game.getPlayers().size()));
-            row.put("startDate", game.getStartDate().toString());
+            row.put("location", String.format("%f, %f",
+                    game.getLocation().getLatitude(), game.getLocation().getLongitude()));
+            row.put("numPlayers", String.format("%d players", game.getPlayers().size()));
+            row.put("startDate", game.getStartDate().toString(DateTimeFormat.shortDateTime()));
             data.add(row);
         }
         gameList.setAdapter(new SimpleAdapter(this, data, R.layout.game_list_item, from, to));

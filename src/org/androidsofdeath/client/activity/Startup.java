@@ -7,9 +7,12 @@ import android.os.Bundle;
 import android.util.Log;
 import com.google.android.gcm.GCMRegistrar;
 import org.androidsofdeath.client.R;
+import org.androidsofdeath.client.model.ApiException;
 import org.androidsofdeath.client.model.GameSession;
 import org.androidsofdeath.client.model.LoginCredentials;
 import org.androidsofdeath.client.service.GCMIntentService;
+
+import java.io.IOException;
 
 public class Startup extends Activity {
 
@@ -84,7 +87,15 @@ public class Startup extends Activity {
             @Override
             protected GameSession doInBackground(LoginCredentials... params) {
                 assert params.length == 1;
-                return GameSession.doLogin(params[0]);
+                try {
+                    return GameSession.doLogin(params[0]);
+                } catch (IOException e) {
+                    Log.e(TAG, e.toString());
+                    throw new RuntimeException(e);
+                } catch (ApiException e) {
+                    Log.e(TAG, e.toString());
+                    throw new RuntimeException(e);
+                }
             }
             protected void onPostExecute(GameSession result) {
                 if(result == null) {

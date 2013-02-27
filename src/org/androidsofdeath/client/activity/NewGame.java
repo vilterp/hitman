@@ -11,6 +11,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.*;
 import org.androidsofdeath.client.R;
+import org.androidsofdeath.client.model.ApiException;
 import org.androidsofdeath.client.model.Game;
 import org.androidsofdeath.client.model.GameSession;
 import org.androidsofdeath.client.model.Player;
@@ -18,7 +19,6 @@ import org.joda.time.DateTime;
 import org.json.JSONException;
 
 import java.io.IOException;
-import java.util.Date;
 import java.util.HashSet;
 
 public class NewGame extends Activity {
@@ -65,13 +65,13 @@ public class NewGame extends Activity {
                             Game createdGame = null;
                             try {
                                 createdGame = session.createGame(theGame);
-                            } catch (GameSession.ApiException e) {
+                            } catch (ApiException e) {
                                 Log.e(TAG, String.format("create game failed: %s", e.toString()));
                             }
                             try {
                                 session.joinGame(createdGame);
                                 return createdGame;
-                            } catch (GameSession.ApiException e) {
+                            } catch (ApiException e) {
                                 Log.e(TAG, String.format("join game failed: %s", e.toString()));
                             }
                         } catch (IOException e) {
