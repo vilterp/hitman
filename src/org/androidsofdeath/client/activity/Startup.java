@@ -118,7 +118,7 @@ public class Startup extends Activity {
                     try {
                         Game game = result.getRight();
                         Intent launchShowGame = new Intent(Startup.this, ShowGame.class);
-                        launchShowGame.putExtra("session", new PlayingContext(game, context.getCredentials()));
+                        launchShowGame.putExtra("context", new PlayingContext(game, context.getCredentials()));
                         launchShowGame.putExtra("game", game);
                         startActivity(launchShowGame);
                     } catch (WrongSideException e) {

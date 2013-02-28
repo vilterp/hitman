@@ -10,8 +10,12 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.*;
+import com.google.common.base.Function;
 import org.androidsofdeath.client.R;
+import org.androidsofdeath.client.http.Either;
+import org.androidsofdeath.client.http.Left;
 import org.androidsofdeath.client.http.UnexpectedResponseStatusException;
+import org.androidsofdeath.client.http.WrongSideException;
 import org.androidsofdeath.client.model.*;
 import org.joda.time.DateTime;
 import org.json.JSONException;
@@ -28,13 +32,13 @@ public class NewGame extends Activity {
     private Button submitButton;
     private LatLng location;
     private TextView waitingMsg;
-    private GameSession session;
+    private LoggedInContext context;
 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.new_game);
         location = null;
-        session = (GameSession) getIntent().getSerializableExtra("session");
+        context = (LoggedInContext) getIntent().getSerializableExtra("context");
         // get refs to shit
         gameName = (EditText) findViewById(R.id.new_game_game_name);
         startDate = (DatePicker) findViewById(R.id.new_game_date);
@@ -54,39 +58,35 @@ public class NewGame extends Activity {
                 submitButton.setEnabled(false);
                 final Toast toast = Toast.makeText(NewGame.this, "Creating game....", Toast.LENGTH_LONG);
                 toast.show();
-                new AsyncTask<Game, Void, Game>() {
+                new AsyncTask<Game, Void, Either<Object,Either<LoggedInContext.AlreadyInGameException,PlayingContext>>>() {
                     @Override
-                    protected Game doInBackground(Game... params) {
+                    protected Either<Object,Either<LoggedInContext.AlreadyInGameException,PlayingContext>>
+                                doInBackground(Game... params) {
                         assert params.length == 0;
                         Game theGame = params[0];
-                        // TODO: error handling code here is not really right. what if already in game?
-                        try {
-                            Game createdGame = null;
-                            try {
-                                createdGame = session.createGame(theGame);
-                            } catch (UnexpectedResponseStatusException e) {
-                                Log.e(TAG, String.format("create game failed: %s", e.toString()));
-                            }
-                            try {
-                                session.joinGame(createdGame);
-                                return createdGame;
-                            } catch (UnexpectedResponseStatusException e) {
-                                Log.e(TAG, String.format("join game failed: %s", e.toString()));
-                            }
-                        } catch (IOException e) {
-                            Log.e(TAG, e.toString());
-                        } catch (JSONException e) {
-                            Log.e(TAG, e.toString());
-                        }
-                        return null;
+                        return LoggedInContext.collapse(context.createGame(theGame).bindRight(
+                                new Function<Game, Either<Object, Either<LoggedInContext.AlreadyInGameException, PlayingContext>>>() {
+                                    public Either<Object, Either<LoggedInContext.AlreadyInGameException, PlayingContext>> apply(Game game) {
+                                        return context.joinGame(game);
+                                    }
+                                }));
                     }
                     @Override
-                    protected void onPostExecute(Game res) {
+                    protected void onPostExecute(Either<Object,Either<LoggedInContext.AlreadyInGameException,PlayingContext>> res) {
                         toast.cancel();
-                        Intent data = new Intent();
-                        data.putExtra("game", res);
-                        setResult(RESULT_OK, data);
-                        finish();
+                        try {
+                            Either<LoggedInContext.AlreadyInGameException,PlayingContext> joinRes = res.getRight();
+                            if(joinRes instanceof Left) {
+                                throw new RuntimeException("user already in game");
+                            } else {
+                                Intent data = new Intent();
+                                data.putExtra("context", joinRes.getRight());
+                                setResult(RESULT_OK, data);
+                                finish();
+                            }
+                        } catch (WrongSideException e) {
+                            Toast.makeText(NewGame.this, "An error occured. Try again?", Toast.LENGTH_LONG).show();
+                        }
                     }
                 }.execute(game);
             }

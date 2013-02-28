@@ -105,24 +105,22 @@ public class LoggedInContext extends HitmanContext {
         .bindRight(gameFromJsonObject));
     }
 
-    public enum JoinResult {
-        JOINED,
-        ALREADY_IN_GAME
-    }
-
-    public Either<Object,Either<Void,PlayingContext>> joinGame(final Game game) {
+    public Either<Object,Either<AlreadyInGameException,PlayingContext>> joinGame(final Game game) {
         return getJsonObjectExpectCodes(String.format("/games/%d/join", game.getId()), null, HTTPMethod.PUT, 200, 403)
-                .bindRight(new Function<JSONObject, Either<Void, PlayingContext>>() {
-                    public Either<Void, PlayingContext> apply(JSONObject jsonObject) {
+                .bindRight(new Function<JSONObject, Either<AlreadyInGameException, PlayingContext>>() {
+                    public Either<AlreadyInGameException, PlayingContext> apply(JSONObject jsonObject) {
                         try {
                             return jsonObject.getBoolean("success")
-                                    ? new Right<Void, PlayingContext>(new PlayingContext(game, credentials))
-                                    : new Left<Void, PlayingContext>(null);
+                                    ? new Right<AlreadyInGameException, PlayingContext>(new PlayingContext(game, credentials))
+                                    : new Left<AlreadyInGameException, PlayingContext>(new AlreadyInGameException());
                         } catch (JSONException e) {
                             throw new RuntimeException(e);
                         }
                     }
                 });
+    }
+
+    public class AlreadyInGameException extends Exception {
     }
 
 }

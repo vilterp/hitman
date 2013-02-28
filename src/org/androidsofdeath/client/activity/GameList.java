@@ -12,10 +12,15 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.*;
+import com.google.common.base.Function;
 import org.androidsofdeath.client.R;
+import org.androidsofdeath.client.http.Either;
+import org.androidsofdeath.client.http.Left;
 import org.androidsofdeath.client.http.UnexpectedResponseStatusException;
+import org.androidsofdeath.client.http.WrongSideException;
 import org.androidsofdeath.client.model.Game;
-import org.androidsofdeath.client.model.GameSession;
+import org.androidsofdeath.client.model.LoggedInContext;
+import org.androidsofdeath.client.model.PlayingContext;
 import org.joda.time.format.DateTimeFormat;
 import org.json.JSONException;
 
@@ -24,9 +29,9 @@ import java.util.*;
 
 public class GameList extends Activity implements JoinGameDialogFragment.JoinGameDialogListener {
 
-    public static final String TAG = "HITMAN_GameSession";
+    public static final String TAG = "HITMAN_LoggedInContext";
     private static final int REQ_NEW_GAME = 1;
-    private GameSession session;
+    private LoggedInContext context;
     private ListView gameList;
     private ProgressBar spinner;
     private State state;
@@ -42,7 +47,7 @@ public class GameList extends Activity implements JoinGameDialogFragment.JoinGam
         super.onCreate(savedInstanceState);
         gameIndicies = new HashMap<Integer, Game>();
         setContentView(R.layout.game_list);
-        session = (GameSession) getIntent().getSerializableExtra("session");
+        context = (LoggedInContext) getIntent().getSerializableExtra("context");
         gameList = (ListView) findViewById(R.id.game_list_list);
         // spinner = (ProgressBar) findViewById(R.id.game_list_progress);
         gameList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -58,39 +63,28 @@ public class GameList extends Activity implements JoinGameDialogFragment.JoinGam
     public void onPositiveClick(final Game game) {
         final Toast toast = Toast.makeText(this, "Joining...", Toast.LENGTH_LONG);
         toast.show();
-        new AsyncTask<Game, Void, GameSession.JoinResult>() {
+        new AsyncTask<Game, Void, Either<Object,Either<LoggedInContext.AlreadyInGameException,PlayingContext>>>() {
             @Override
-            protected GameSession.JoinResult doInBackground(Game... params) {
+            protected Either<Object,Either<LoggedInContext.AlreadyInGameException,PlayingContext>> doInBackground(Game... params) {
                 assert params.length == 1;
                 Game gameToJoin = params[0];
-                try {
-                    return session.joinGame(gameToJoin);
-                } catch (UnexpectedResponseStatusException e) {
-                    Log.e(TAG, e.toString());
-                    return null;
-                } catch (IOException e) {
-                    Log.e(TAG, e.toString());
-                    return null;
-                }
+                return context.joinGame(gameToJoin);
             }
             @Override
-            protected void onPostExecute(GameSession.JoinResult res) {
+            protected void onPostExecute(Either<Object,Either<LoggedInContext.AlreadyInGameException,PlayingContext>> res) {
                 toast.cancel();
-                if(res == null) {
-                    Toast.makeText(GameList.this, "Error while joining. Try again.", Toast.LENGTH_LONG);
+                try {
+                Either<LoggedInContext.AlreadyInGameException,PlayingContext> joinRes = res.getRight();
+                if(joinRes instanceof Left) {
+                    throw new RuntimeException("already in game");
                 } else {
-                    switch(res) {
-                        case JOINED:
-                            Intent showGame = new Intent(GameList.this, ShowGame.class);
-                            showGame.putExtra("session", session);
-                            showGame.putExtra("game", game);
-                            startActivity(showGame);
-                            break;
-                        case ALREADY_IN_GAME:
-                            // really, the UI shouldn't let it get to this point.
-                            Toast.makeText(GameList.this, "Already in game.", Toast.LENGTH_LONG).show();
-                            break;
-                    }
+                    Intent showGame = new Intent(GameList.this, ShowGame.class);
+                    showGame.putExtra("context", joinRes.getRight());
+                    showGame.putExtra("game", game);
+                    startActivity(showGame);
+                }
+                } catch (WrongSideException e) {
+                    Toast.makeText(GameList.this, "Error while joining. Try again.", Toast.LENGTH_LONG).show();
                 }
             }
         }.execute(game);
@@ -98,24 +92,17 @@ public class GameList extends Activity implements JoinGameDialogFragment.JoinGam
 
     private void loadList() {
         enterLoadingState();
-        new AsyncTask<Void, Void, Set<Game>>() {
+        new AsyncTask<Void, Void, Either<Object,Set<Game>>>() {
             @Override
-            protected Set<Game> doInBackground(Void... params) {
-                try {
-                    return session.getGameList();
-                } catch (IOException e) {
-                    Log.e(TAG, e.toString());
-                    return null;
-                } catch (JSONException e) {
-                    Log.e(TAG, e.toString());
-                    return null;
-                } catch (UnexpectedResponseStatusException e) {
-                    Log.e(TAG, e.toString());
-                    return null;
-                }
+            protected Either<Object,Set<Game>> doInBackground(Void... params) {
+                return context.getGameList();
             }
-            protected void onPostExecute(Set<Game> games) {
-                updateList(games);
+            protected void onPostExecute(Either<Object,Set<Game>> games) {
+                try {
+                    updateList(games.getRight());
+                } catch (WrongSideException e) {
+                    Toast.makeText(GameList.this, "Error occurred. Try again?", Toast.LENGTH_LONG).show();
+                }
             }
         }.execute();
     }
@@ -132,7 +119,7 @@ public class GameList extends Activity implements JoinGameDialogFragment.JoinGam
         switch (item.getItemId()) {
             case R.id.game_list_new_game:
                 Intent launchNewGame = new Intent(this, NewGame.class);
-                launchNewGame.putExtra("session", session);
+                launchNewGame.putExtra("context", context);
                 startActivityForResult(launchNewGame, REQ_NEW_GAME);
                 break;
             case R.id.game_list_refresh:
@@ -146,19 +133,8 @@ public class GameList extends Activity implements JoinGameDialogFragment.JoinGam
     public void onActivityResult(int reqCode, int resCode, Intent data) {
         assert reqCode == REQ_NEW_GAME;
         assert resCode == RESULT_OK;
-        showJustJoinedGame((Game) data.getExtras().getSerializable("game"));
-    }
-
-    private void showJustJoinedGame(Game game) {
-        // save game id
-        SharedPreferences prefs = getSharedPreferences(Startup.PREFS_NAME, MODE_PRIVATE);
-        SharedPreferences.Editor editor = prefs.edit();
-        editor.putInt(Startup.PREF_CURRENT_GAME_ID, game.getId());
-        editor.commit();
-        // launch show game screen
         Intent showGame = new Intent(this, ShowGame.class);
-        showGame.putExtra("session", session);
-        showGame.putExtra("game", game);
+        showGame.putExtra("context", data.getExtras().getSerializable("context"));
         startActivity(showGame);
     }
 
