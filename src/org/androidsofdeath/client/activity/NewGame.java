@@ -58,17 +58,18 @@ public class NewGame extends Activity {
                     protected Game doInBackground(Game... params) {
                         assert params.length == 0;
                         Game theGame = params[0];
+                        // TODO: error handling code here is not really right. what if already in game?
                         try {
                             Game createdGame = null;
                             try {
                                 createdGame = session.createGame(theGame);
-                            } catch (ApiException e) {
+                            } catch (UnexpectedResponseStatusException e) {
                                 Log.e(TAG, String.format("create game failed: %s", e.toString()));
                             }
                             try {
                                 session.joinGame(createdGame);
                                 return createdGame;
-                            } catch (ApiException e) {
+                            } catch (UnexpectedResponseStatusException e) {
                                 Log.e(TAG, String.format("join game failed: %s", e.toString()));
                             }
                         } catch (IOException e) {
@@ -81,9 +82,10 @@ public class NewGame extends Activity {
                     @Override
                     protected void onPostExecute(Game res) {
                         toast.cancel();
-                        Intent launchGameScreen = new Intent(NewGame.this, ShowGame.class);
-                        launchGameScreen.putExtra("session", session.joinedGame(res));
-                        startActivity(launchGameScreen);
+                        Intent data = new Intent();
+                        data.putExtra("game", res);
+                        setResult(RESULT_OK, data);
+                        finish();
                     }
                 }.execute(game);
             }

@@ -1,5 +1,6 @@
 package org.androidsofdeath.client.model;
 
+import android.content.SharedPreferences;
 import android.location.Location;
 import android.util.Log;
 import org.apache.http.HttpResponse;
@@ -42,7 +43,7 @@ public class GameSession implements Serializable {
         this.currentGame = game;
     }
 
-    public static GameSession doSignup(LoginCredentials credentials) throws IOException, ApiException {
+    public static GameSession doSignup(LoginCredentials credentials) throws IOException, UnexpectedResponseStatusException {
         Map<String, String> params = new HashMap<String, String>();
         params.put("user", credentials.getUsername());
         params.put("password", credentials.getPassword());
@@ -52,7 +53,7 @@ public class GameSession implements Serializable {
         return new GameSession(credentials, null);
     }
 
-    public static GameSession doLogin(LoginCredentials credentials) throws IOException, ApiException {
+    public static GameSession doLogin(LoginCredentials credentials) throws IOException, UnexpectedResponseStatusException {
         Map<String, String> params = new HashMap<String, String>();
         params.put("gcm_regid", credentials.getGcmId());
         params.put("username", credentials.getUsername());
@@ -69,7 +70,7 @@ public class GameSession implements Serializable {
         execAuthdReq("/locations/update", params, HTTPMethod.POST);
     }
 
-    public Set<Game> getGameList() throws IOException, JSONException, ApiException {
+    public Set<Game> getGameList() throws IOException, JSONException, UnexpectedResponseStatusException {
         JSONArray gamesJson = new JSONArray(getBody(expectCodes(execAuthdReq("/games/", null, HTTPMethod.GET), 200)));
         Set<Game> games = new HashSet<Game>();
         for (int i = 0; i < gamesJson.length(); i++) {
@@ -78,7 +79,7 @@ public class GameSession implements Serializable {
         return games;
     }
 
-    public Game createGame(Game game) throws IOException, JSONException, ApiException {
+    public Game createGame(Game game) throws IOException, JSONException, UnexpectedResponseStatusException {
         Map<String, String> params = new HashMap<String, String>();
         params.put("name", game.getName());
         params.put("start_time", game.getStartDate().toString(ISODateTimeFormat.dateTime()));
@@ -87,12 +88,26 @@ public class GameSession implements Serializable {
                 getBody(expectCodes(execAuthdReq("/games/create/", params, HTTPMethod.POST), 201))));
     }
 
-    public void joinGame(Game game) throws ApiException, IOException {
-        expectCodes(execAuthdReq(String.format("/games/%d/join", game.getId()),
-                new HashMap<String, String>(), HTTPMethod.PUT), 200);
+    public enum JoinResult {
+        JOINED,
+        ALREADY_IN_GAME
     }
 
-    public Game getGame(int id) throws IOException, JSONException, ApiException {
+    public JoinResult joinGame(Game game) throws UnexpectedResponseStatusException, IOException {
+        HttpResponse resp = execAuthdReq(String.format("/games/%d/join", game.getId()),
+                new HashMap<String, String>(), HTTPMethod.PUT);
+        switch (resp.getStatusLine().getStatusCode()) {
+            case 200:
+                this.setCurrentGame(game);
+                return JoinResult.JOINED;
+            case 403:
+                return JoinResult.ALREADY_IN_GAME;
+            default:
+                throw new UnexpectedResponseStatusException(resp, 200, 403);
+        }
+    }
+
+    public Game getGame(int id) throws IOException, JSONException, UnexpectedResponseStatusException {
         return gameFromJsonObject(new JSONObject(getBody(expectCodes(execAuthdReq(
                 String.format("/games/%d/", id), null, HTTPMethod.GET), 200))));
     }
@@ -123,14 +138,14 @@ public class GameSession implements Serializable {
         return reader.readLine();
     }
 
-    private static HttpResponse expectCodes(HttpResponse resp, int... codes) throws ApiException {
+    private static HttpResponse expectCodes(HttpResponse resp, int... codes) throws UnexpectedResponseStatusException {
         int respCode = resp.getStatusLine().getStatusCode();
         for (int code : codes) {
             if(code == respCode) {
                 return resp;
             }
         }
-        throw new ApiException(resp, codes);
+        throw new UnexpectedResponseStatusException(resp, codes);
     }
 
     private HttpResponse execAuthdReq(String path, Map<String, String> params, HTTPMethod method) throws IOException {
@@ -194,6 +209,10 @@ public class GameSession implements Serializable {
 
     public Game getCurrentGame() {
         return currentGame;
+    }
+
+    public void setCurrentGame(Game currentGame) {
+        this.currentGame = currentGame;
     }
 
     public GameSession joinedGame(Game res) {
