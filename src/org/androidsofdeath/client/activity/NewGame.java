@@ -11,10 +11,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.*;
 import org.androidsofdeath.client.R;
-import org.androidsofdeath.client.model.ApiException;
-import org.androidsofdeath.client.model.Game;
-import org.androidsofdeath.client.model.GameSession;
-import org.androidsofdeath.client.model.Player;
+import org.androidsofdeath.client.model.*;
 import org.joda.time.DateTime;
 import org.json.JSONException;
 
@@ -28,7 +25,7 @@ public class NewGame extends Activity {
     private DatePicker startDate;
     private TimePicker startTime;
     private Button submitButton;
-    private Location location;
+    private LatLng location;
     private TextView waitingMsg;
     private GameSession session;
 
@@ -95,7 +92,7 @@ public class NewGame extends Activity {
         LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
         LocationListener locationListener = new LocationListener() {
             public void onLocationChanged(Location location) {
-                NewGame.this.location = location;
+                NewGame.this.location = new LatLng(location);
                 submitButton.setEnabled(true);
                 waitingMsg.setText(String.format("Location: %f, %f", location.getLatitude(), location.getLongitude()));
             }

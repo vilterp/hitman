@@ -105,7 +105,7 @@ public class GameList extends Activity {
             // TODO: nicer formatting
             row.put("name", game.getName());
             row.put("location", String.format("%f, %f",
-                    game.getLocation().getLatitude(), game.getLocation().getLongitude()));
+                    game.getLocation().getLat(), game.getLocation().getLng()));
             row.put("numPlayers", String.format("%d players", game.getPlayers().size()));
             row.put("startDate", game.getStartDate().toString(DateTimeFormat.shortDateTime()));
             data.add(row);

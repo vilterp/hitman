@@ -82,8 +82,7 @@ public class GameSession implements Serializable {
         Map<String, String> params = new HashMap<String, String>();
         params.put("name", game.getName());
         params.put("start_time", game.getStartDate().toString(ISODateTimeFormat.dateTime()));
-        params.put("location", String.format("%f,%f", game.getLocation().getLatitude(),
-                game.getLocation().getLongitude()));
+        params.put("location", game.getLocation().formatCommaSep());
         return gameFromJsonObject(new JSONObject(
                 getBody(expectCodes(execAuthdReq("/games/create/", params, HTTPMethod.POST), 201))));
     }
@@ -99,10 +98,7 @@ public class GameSession implements Serializable {
     }
     
     private static Game gameFromJsonObject(JSONObject obj) throws JSONException {
-        Location loc = new Location(HITMAN_API_PROVIDER);
-        String[] split = obj.getString("location").split(",");
-        loc.setLatitude(Double.parseDouble(split[0]));
-        loc.setLongitude(Double.parseDouble(split[1]));
+        LatLng loc = LatLng.parseCommaSep(obj.getString("location"));
         DateTime startDate = DateTime.parse(obj.getString("start_time"));
         Set<Player> players = new HashSet<Player>();
         if(obj.has("players")) {

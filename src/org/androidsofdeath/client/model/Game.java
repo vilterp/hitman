@@ -10,11 +10,11 @@ public class Game implements Serializable {
 
     private int id;
     private String name;
-    private Location location;
+    private LatLng location;
     private Set<Player> players;
     private DateTime startDate;
 
-    public Game(int id, String name, Location location,
+    public Game(int id, String name, LatLng location,
                 Set<Player> players, DateTime startDate, boolean saved) {
         this.id = id;
         this.name = name;
@@ -31,7 +31,7 @@ public class Game implements Serializable {
         return name;
     }
 
-    public Location getLocation() {
+    public LatLng getLocation() {
         return location;
     }
 
