@@ -11,6 +11,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.*;
 import org.androidsofdeath.client.R;
+import org.androidsofdeath.client.http.UnexpectedResponseStatusException;
 import org.androidsofdeath.client.model.*;
 import org.joda.time.DateTime;
 import org.json.JSONException;

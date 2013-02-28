@@ -1,4 +1,4 @@
-package org.androidsofdeath.client.model;
+package org.androidsofdeath.client.http;
 
 import org.apache.http.HttpResponse;
 

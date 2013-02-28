@@ -13,7 +13,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.*;
 import org.androidsofdeath.client.R;
-import org.androidsofdeath.client.model.UnexpectedResponseStatusException;
+import org.androidsofdeath.client.http.UnexpectedResponseStatusException;
 import org.androidsofdeath.client.model.Game;
 import org.androidsofdeath.client.model.GameSession;
 import org.joda.time.format.DateTimeFormat;
