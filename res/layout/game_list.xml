@@ -4,10 +4,19 @@
               android:orientation="vertical"
               android:layout_width="fill_parent"
               android:layout_height="fill_parent">
-
-    <ListView
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:id="@+id/game_list_list"
-            android:visibility="invisible"/>
+    <ProgressBar android:id="@+id/progress"
+                 style="?android:attr/progressBarStyleLarge"
+                 android:layout_width="wrap_content"
+                 android:layout_height="fill_parent"
+                 android:layout_gravity="center_vertical|center_horizontal"
+                 android:visibility="visible"/>
+    <ListView android:layout_width="fill_parent"
+              android:layout_height="wrap_content"
+              android:id="@+id/game_list_list"
+              android:visibility="gone"/>
+    <TextView android:id="@+id/game_list_empty"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:text="No games. Better create one!"
+              android:visibility="gone"/>
 </LinearLayout>

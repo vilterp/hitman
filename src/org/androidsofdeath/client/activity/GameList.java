@@ -3,28 +3,24 @@ package org.androidsofdeath.client.activity;
 import android.app.Activity;
 import android.app.DialogFragment;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.*;
-import com.google.common.base.Function;
 import org.androidsofdeath.client.R;
+import org.androidsofdeath.client.Util;
 import org.androidsofdeath.client.http.Either;
 import org.androidsofdeath.client.http.Left;
-import org.androidsofdeath.client.http.UnexpectedResponseStatusException;
 import org.androidsofdeath.client.http.WrongSideException;
 import org.androidsofdeath.client.model.Game;
 import org.androidsofdeath.client.model.LoggedInContext;
+import org.androidsofdeath.client.model.LoginCredentials;
 import org.androidsofdeath.client.model.PlayingContext;
 import org.joda.time.format.DateTimeFormat;
-import org.json.JSONException;
 
-import java.io.IOException;
 import java.util.*;
 
 public class GameList extends Activity implements JoinGameDialogFragment.JoinGameDialogListener {
@@ -47,9 +43,10 @@ public class GameList extends Activity implements JoinGameDialogFragment.JoinGam
         super.onCreate(savedInstanceState);
         gameIndicies = new HashMap<Integer, Game>();
         setContentView(R.layout.game_list);
-        context = (LoggedInContext) getIntent().getSerializableExtra("context");
+        context = new LoggedInContext((LoginCredentials) getIntent().getSerializableExtra("credentials"));
         gameList = (ListView) findViewById(R.id.game_list_list);
-        // spinner = (ProgressBar) findViewById(R.id.game_list_progress);
+        gameList.setEmptyView(findViewById(R.id.game_list_empty));
+        spinner = (ProgressBar) findViewById(R.id.progress);
         gameList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Game game = gameIndicies.get(position);
@@ -57,6 +54,11 @@ public class GameList extends Activity implements JoinGameDialogFragment.JoinGam
                 joinDialog.show(getFragmentManager(), "JoinGameDialogFragment");
             }
         });
+        loadList();
+    }
+
+    public void onResume() {
+        super.onResume();
         loadList();
     }
 
@@ -68,7 +70,7 @@ public class GameList extends Activity implements JoinGameDialogFragment.JoinGam
             protected Either<Object,Either<LoggedInContext.AlreadyInGameException,PlayingContext>> doInBackground(Game... params) {
                 assert params.length == 1;
                 Game gameToJoin = params[0];
-                return context.joinGame(gameToJoin);
+                return context.joinGame(GameList.this, gameToJoin);
             }
             @Override
             protected void onPostExecute(Either<Object,Either<LoggedInContext.AlreadyInGameException,PlayingContext>> res) {
@@ -79,8 +81,9 @@ public class GameList extends Activity implements JoinGameDialogFragment.JoinGam
                     throw new RuntimeException("already in game");
                 } else {
                     Intent showGame = new Intent(GameList.this, ShowGame.class);
-                    showGame.putExtra("context", joinRes.getRight());
-                    showGame.putExtra("game", game);
+                    PlayingContext ctx = joinRes.getRight();
+                    showGame.putExtra("credentials", ctx.getCredentials());
+                    showGame.putExtra("game", ctx.getGame());
                     startActivity(showGame);
                 }
                 } catch (WrongSideException e) {
@@ -101,7 +104,7 @@ public class GameList extends Activity implements JoinGameDialogFragment.JoinGam
                 try {
                     updateList(games.getRight());
                 } catch (WrongSideException e) {
-                    Toast.makeText(GameList.this, "Error occurred. Try again?", Toast.LENGTH_LONG).show();
+                    Util.handleError(GameList.this, e);
                 }
             }
         }.execute();
@@ -119,7 +122,7 @@ public class GameList extends Activity implements JoinGameDialogFragment.JoinGam
         switch (item.getItemId()) {
             case R.id.game_list_new_game:
                 Intent launchNewGame = new Intent(this, NewGame.class);
-                launchNewGame.putExtra("context", context);
+                launchNewGame.putExtra("credentials", context.getCredentials());
                 startActivityForResult(launchNewGame, REQ_NEW_GAME);
                 break;
             case R.id.game_list_refresh:
@@ -134,7 +137,7 @@ public class GameList extends Activity implements JoinGameDialogFragment.JoinGam
         assert reqCode == REQ_NEW_GAME;
         assert resCode == RESULT_OK;
         Intent showGame = new Intent(this, ShowGame.class);
-        showGame.putExtra("context", data.getExtras().getSerializable("context"));
+        showGame.putExtras(data.getExtras());
         startActivity(showGame);
     }
 
@@ -159,14 +162,14 @@ public class GameList extends Activity implements JoinGameDialogFragment.JoinGam
         }
         gameList.setAdapter(new SimpleAdapter(this, data, R.layout.game_list_item, from, to));
         state = State.DISPLAYING;
-//        spinner.setVisibility(View.INVISIBLE);
+        spinner.setVisibility(View.GONE);
         gameList.setVisibility(View.VISIBLE);
     }
 
     private void enterLoadingState() {
         state = State.LOADING;
-//        spinner.setVisibility(View.VISIBLE);
-        gameList.setVisibility(View.INVISIBLE);
+        spinner.setVisibility(View.VISIBLE);
+        gameList.setVisibility(View.GONE);
     }
 
 }

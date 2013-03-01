@@ -12,6 +12,7 @@ import android.view.View;
 import android.widget.*;
 import com.google.common.base.Function;
 import org.androidsofdeath.client.R;
+import org.androidsofdeath.client.Util;
 import org.androidsofdeath.client.http.Either;
 import org.androidsofdeath.client.http.Left;
 import org.androidsofdeath.client.http.UnexpectedResponseStatusException;
@@ -38,7 +39,7 @@ public class NewGame extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.new_game);
         location = null;
-        context = (LoggedInContext) getIntent().getSerializableExtra("context");
+        context = new LoggedInContext((LoginCredentials) getIntent().getSerializableExtra("credentials"));
         // get refs to shit
         gameName = (EditText) findViewById(R.id.new_game_game_name);
         startDate = (DatePicker) findViewById(R.id.new_game_date);
@@ -67,7 +68,7 @@ public class NewGame extends Activity {
                         return LoggedInContext.collapse(context.createGame(theGame).bindRight(
                                 new Function<Game, Either<Object, Either<LoggedInContext.AlreadyInGameException, PlayingContext>>>() {
                                     public Either<Object, Either<LoggedInContext.AlreadyInGameException, PlayingContext>> apply(Game game) {
-                                        return context.joinGame(game);
+                                        return context.joinGame(NewGame.this, game);
                                     }
                                 }));
                     }
@@ -79,13 +80,15 @@ public class NewGame extends Activity {
                             if(joinRes instanceof Left) {
                                 throw new RuntimeException("user already in game");
                             } else {
+                                PlayingContext ctx = joinRes.getRight();
                                 Intent data = new Intent();
-                                data.putExtra("context", joinRes.getRight());
+                                data.putExtra("credentials", ctx.getCredentials());
+                                data.putExtra("game", ctx.getGame());
                                 setResult(RESULT_OK, data);
                                 finish();
                             }
                         } catch (WrongSideException e) {
-                            Toast.makeText(NewGame.this, "An error occured. Try again?", Toast.LENGTH_LONG).show();
+                            Util.handleError(NewGame.this, e);
                         }
                     }
                 }.execute(game);

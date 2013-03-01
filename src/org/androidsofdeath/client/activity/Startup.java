@@ -8,6 +8,7 @@ import android.util.Log;
 import android.widget.Toast;
 import com.google.android.gcm.GCMRegistrar;
 import org.androidsofdeath.client.R;
+import org.androidsofdeath.client.Util;
 import org.androidsofdeath.client.http.Either;
 import org.androidsofdeath.client.http.WrongSideException;
 import org.androidsofdeath.client.model.*;
@@ -30,7 +31,7 @@ public class Startup extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.waiting);
-        loggedOutContext = new LoggedOutContext(this);
+        loggedOutContext = new LoggedOutContext();
         receiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -59,7 +60,7 @@ public class Startup extends Activity {
     }
 
     private void getCredentialsAndLogin(String gcmId) {
-        LoginCredentials credentials = loggedOutContext.readCredentials(gcmId);
+        LoginCredentials credentials = loggedOutContext.readCredentials(this, gcmId);
         if(credentials == null) {
             getCredentials(gcmId);
         } else {
@@ -85,13 +86,13 @@ public class Startup extends Activity {
             @Override
             protected Either<Object, LoggedInContext> doInBackground(LoginCredentials... params) {
                 assert params.length == 1;
-                return loggedOutContext.doLogin(params[0]);
+                return loggedOutContext.doLogin(Startup.this, params[0]);
             }
             protected void onPostExecute(Either<Object,LoggedInContext> result) {
                 try {
                     enterGameOrAskForGame(result.getRight());
                 } catch (WrongSideException e) {
-                    Toast.makeText(Startup.this, "Error occurred. Try again?", Toast.LENGTH_LONG).show();
+                    Util.handleError(Startup.this, e);
                     getCredentials(credentials.getGcmId());
                 }
             }
@@ -99,10 +100,10 @@ public class Startup extends Activity {
     }
 
     private void enterGameOrAskForGame(final LoggedInContext context) {
-        int gameId = context.readGameId();
+        int gameId = context.readGameId(this);
         if(gameId == -1) {
             Intent launchGameList = new Intent(this, GameList.class);
-            launchGameList.putExtra("context", context);
+            launchGameList.putExtra("credentials", context.getCredentials());
             startActivity(launchGameList);
         } else {
             // get game
@@ -118,11 +119,11 @@ public class Startup extends Activity {
                     try {
                         Game game = result.getRight();
                         Intent launchShowGame = new Intent(Startup.this, ShowGame.class);
-                        launchShowGame.putExtra("context", new PlayingContext(game, context.getCredentials()));
+                        launchShowGame.putExtra("credentials", context.getCredentials());
                         launchShowGame.putExtra("game", game);
                         startActivity(launchShowGame);
                     } catch (WrongSideException e) {
-                        Toast.makeText(Startup.this, "Error occurred. Try again?", Toast.LENGTH_LONG).show();
+                        Util.handleError(Startup.this, e);
                     }
                 }
             }.execute(gameId);

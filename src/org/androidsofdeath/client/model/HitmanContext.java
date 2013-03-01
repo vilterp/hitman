@@ -10,20 +10,10 @@ public abstract class HitmanContext extends AuthContext implements Serializable 
 
     public static final String PREFS_NAME = "HitmanPrefs";
 
-    private Context androidContext;
     private SharedPreferences prefs;
 
-    protected HitmanContext(Context androidContext) {
-        this.androidContext = androidContext;
-        this.prefs = androidContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-    }
-
-    public Context getAndroidContext() {
-        return androidContext;
-    }
-
-    public SharedPreferences getPrefs() {
-        return prefs;
+    public SharedPreferences getPrefs(Context context) {
+        return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
     }
 
     @Override

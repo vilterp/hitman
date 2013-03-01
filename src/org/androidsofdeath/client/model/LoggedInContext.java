@@ -21,15 +21,14 @@ public class LoggedInContext extends HitmanContext {
     private List<Header> headers;
     private LoginCredentials credentials;
 
-    public LoggedInContext(Context context, LoginCredentials credentials) {
-        super(context);
+    public LoggedInContext(LoginCredentials credentials) {
         this.credentials = credentials;
         this.headers = new ArrayList<Header>(1);
         headers.add(new BasicHeader(AUTH_HEADER, credentials.getGcmId()));
     }
 
-    public int readGameId() {
-        return getPrefs().getInt(PREF_CURRENT_GAME_ID, -1);
+    public int readGameId(Context context) {
+        return getPrefs(context).getInt(PREF_CURRENT_GAME_ID, -1);
     }
 
     public LoginCredentials getCredentials() {
@@ -105,14 +104,18 @@ public class LoggedInContext extends HitmanContext {
         .bindRight(gameFromJsonObject));
     }
 
-    public Either<Object,Either<AlreadyInGameException,PlayingContext>> joinGame(final Game game) {
+    public Either<Object,Either<AlreadyInGameException,PlayingContext>> joinGame(final Context context, final Game game) {
         return getJsonObjectExpectCodes(String.format("/games/%d/join", game.getId()), null, HTTPMethod.PUT, 200, 403)
                 .bindRight(new Function<JSONObject, Either<AlreadyInGameException, PlayingContext>>() {
                     public Either<AlreadyInGameException, PlayingContext> apply(JSONObject jsonObject) {
                         try {
-                            return jsonObject.getBoolean("success")
-                                    ? new Right<AlreadyInGameException, PlayingContext>(new PlayingContext(game, credentials))
-                                    : new Left<AlreadyInGameException, PlayingContext>(new AlreadyInGameException());
+                            if(jsonObject.getBoolean("success")) {
+                                getPrefs(context).edit().putInt(PREF_CURRENT_GAME_ID, game.getId()).commit();
+                                return new Right<AlreadyInGameException, PlayingContext>(
+                                        new PlayingContext(game, credentials));
+                            } else {
+                                return new Left<AlreadyInGameException, PlayingContext>(new AlreadyInGameException());
+                            }
                         } catch (JSONException e) {
                             throw new RuntimeException(e);
                         }

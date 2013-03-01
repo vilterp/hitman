@@ -1,29 +1,32 @@
 package org.androidsofdeath.client.model;
 
+import android.content.Context;
 import android.location.Location;
+import org.androidsofdeath.client.activity.ShowGame;
+import org.apache.http.Header;
 
 import java.io.Serializable;
+import java.util.List;
 
-public class PlayingContext implements Serializable {
+public class PlayingContext extends LoggedInContext implements Serializable {
 
     private Game game;
-    private LoginCredentials credentials;
 
     public PlayingContext(Game game, LoginCredentials credentials) {
+        super(credentials);
         this.game = game;
-        this.credentials = credentials;
     }
 
     public Game getGame() {
         return game;
     }
 
-    public LoginCredentials getCredentials() {
-        return credentials;
-    }
-
     public void updateLocation(Location loc) {
         // TODO ...
+    }
+
+    public void leaveGame(Context context) {
+        getPrefs(context).edit().remove(PREF_CURRENT_GAME_ID).commit();
     }
 
 }
