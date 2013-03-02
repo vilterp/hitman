@@ -23,19 +23,7 @@ public class LoggedOutContext extends HitmanContext {
         return NO_HEADERS;
     }
 
-    public LoginCredentials readCredentials(Context context, String gcmId) {
-        String username = getPrefs(context).getString(PREF_USERNAME, null);
-        // TODO: probably should store this more securely :P
-        String password = getPrefs(context).getString(PREF_PASSWORD, null);
-        if(username == null || password == null) {
-            // TODO: maybe
-            return null;
-        } else {
-            return new LoginCredentials(gcmId, username, password);
-        }
-    }
-
-    public Either<Object,LoggedInContext> doSignup(final Context context, final LoginCredentials credentials) {
+    public Either<Object,LoggedInContext> doSignup(final SessionStorage storage, final LoginCredentials credentials) {
         Map<String, String> params = new HashMap<String, String>();
         params.put("user", credentials.getUsername());
         params.put("password", credentials.getPassword());
@@ -43,13 +31,13 @@ public class LoggedOutContext extends HitmanContext {
         return getJsonObjectExpectCodes("/users/signup", params, HTTPMethod.POST, 200)
                 .bindRight(new Function<JSONObject, LoggedInContext>() {
                     public LoggedInContext apply(JSONObject jsonObject) {
-                        writePrefs(context, credentials);
+                        storage.saveLoginCredentials(credentials);
                         return new LoggedInContext(credentials);
                     }
                 });
     }
 
-    public Either<Object,LoggedInContext> doLogin(final Context context, final LoginCredentials credentials) {
+    public Either<Object,LoggedInContext> doLogin(final SessionStorage storage, final LoginCredentials credentials) {
         Map<String, String> params = new HashMap<String, String>();
         params.put("gcm_regid", credentials.getGcmId());
         params.put("username", credentials.getUsername());
@@ -57,17 +45,10 @@ public class LoggedOutContext extends HitmanContext {
         return getJsonObjectExpectCodes("/users/login", params, HTTPMethod.POST, 200)
                 .bindRight(new Function<JSONObject, LoggedInContext>() {
                     public LoggedInContext apply(JSONObject jsonObject) {
-                        writePrefs(context, credentials);
+                        storage.saveLoginCredentials(credentials);
                         return new LoggedInContext(credentials);
                     }
                 });
-    }
-
-    private void writePrefs(Context context, LoginCredentials credentials) {
-        SharedPreferences.Editor editor = getPrefs(context).edit();
-        editor.putString(PREF_USERNAME, credentials.getUsername());
-        editor.putString(PREF_PASSWORD, credentials.getPassword());
-        editor.commit();
     }
 
 }

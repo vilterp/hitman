@@ -16,6 +16,7 @@ public class Game implements Serializable {
 
     public Game(int id, String name, LatLng location,
                 Set<Player> players, DateTime startDate, boolean saved) {
+        assert id >= 0;
         this.id = id;
         this.name = name;
         this.location = location;

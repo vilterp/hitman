@@ -18,7 +18,6 @@ import java.util.*;
 public class LoggedInContext extends HitmanContext {
 
     public static final String AUTH_HEADER = "X-GCMID";
-    public static final String PREF_CURRENT_GAME_ID = "gameId";
 
     private List<Header> headers;
     private LoginCredentials credentials;
@@ -27,10 +26,6 @@ public class LoggedInContext extends HitmanContext {
         this.credentials = credentials;
         this.headers = new ArrayList<Header>(1);
         headers.add(new BasicHeader(AUTH_HEADER, credentials.getGcmId()));
-    }
-
-    public int readGameId(Context context) {
-        return getPrefs(context).getInt(PREF_CURRENT_GAME_ID, -1);
     }
 
     public LoginCredentials getCredentials() {
@@ -106,17 +101,13 @@ public class LoggedInContext extends HitmanContext {
         .bindRight(gameFromJsonObject));
     }
 
-    public Either<Object,Either<AlreadyInGameException,PlayingContext>> joinGame(final Context context, final Game game) {
+    public Either<Object,Either<AlreadyInGameException,PlayingContext>> joinGame(final SessionStorage storage, final Game game) {
         return getJsonObjectExpectCodes(String.format("/games/%d/join", game.getId()), null, HTTPMethod.PUT, 200, 403)
                 .bindRight(new Function<JSONObject, Either<AlreadyInGameException, PlayingContext>>() {
                     public Either<AlreadyInGameException, PlayingContext> apply(JSONObject jsonObject) {
                         try {
                             if(jsonObject.getBoolean("success")) {
-                                getPrefs(context).edit().putInt(PREF_CURRENT_GAME_ID, game.getId()).commit();
-                                Intent startLocationService = new Intent(context, LocationService.class);
-                                startLocationService.putExtra("game", game);
-                                startLocationService.putExtra("credentials", credentials);
-                                context.startService(startLocationService);
+                                storage.saveGameId(game.getId());
                                 return new Right<AlreadyInGameException, PlayingContext>(
                                         new PlayingContext(game, credentials));
                             } else {

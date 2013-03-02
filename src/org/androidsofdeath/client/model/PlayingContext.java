@@ -34,8 +34,4 @@ public class PlayingContext extends LoggedInContext implements Serializable {
         .bindRight(expectCodes(201)));
     }
 
-    public void leaveGame(Context context) {
-        getPrefs(context).edit().remove(PREF_CURRENT_GAME_ID).commit();
-    }
-
 }

@@ -18,6 +18,7 @@ import org.androidsofdeath.client.http.Left;
 import org.androidsofdeath.client.http.UnexpectedResponseStatusException;
 import org.androidsofdeath.client.http.WrongSideException;
 import org.androidsofdeath.client.model.*;
+import org.androidsofdeath.client.service.LocationService;
 import org.joda.time.DateTime;
 import org.json.JSONException;
 
@@ -68,7 +69,7 @@ public class NewGame extends Activity {
                         return LoggedInContext.collapse(context.createGame(theGame).bindRight(
                                 new Function<Game, Either<Object, Either<LoggedInContext.AlreadyInGameException, PlayingContext>>>() {
                                     public Either<Object, Either<LoggedInContext.AlreadyInGameException, PlayingContext>> apply(Game game) {
-                                        return context.joinGame(NewGame.this, game);
+                                        return context.joinGame(new SessionStorage(NewGame.this), game);
                                     }
                                 }));
                     }
@@ -81,6 +82,9 @@ public class NewGame extends Activity {
                                 throw new RuntimeException("user already in game");
                             } else {
                                 PlayingContext ctx = joinRes.getRight();
+                                // start location service
+                                startService(new Intent(NewGame.this, LocationService.class));
+                                // go back to game list, which will launch show game
                                 Intent data = new Intent();
                                 data.putExtra("credentials", ctx.getCredentials());
                                 data.putExtra("game", ctx.getGame());

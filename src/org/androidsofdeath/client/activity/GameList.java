@@ -15,10 +15,8 @@ import org.androidsofdeath.client.Util;
 import org.androidsofdeath.client.http.Either;
 import org.androidsofdeath.client.http.Left;
 import org.androidsofdeath.client.http.WrongSideException;
-import org.androidsofdeath.client.model.Game;
-import org.androidsofdeath.client.model.LoggedInContext;
-import org.androidsofdeath.client.model.LoginCredentials;
-import org.androidsofdeath.client.model.PlayingContext;
+import org.androidsofdeath.client.model.*;
+import org.androidsofdeath.client.service.LocationService;
 import org.joda.time.format.DateTimeFormat;
 
 import java.util.*;
@@ -32,6 +30,7 @@ public class GameList extends Activity implements JoinGameDialogFragment.JoinGam
     private ProgressBar spinner;
     private State state;
     private HashMap<Integer, Game> gameIndicies;
+    private SessionStorage storage;
 
     enum State {
         LOADING,
@@ -41,7 +40,10 @@ public class GameList extends Activity implements JoinGameDialogFragment.JoinGam
     public void onCreate(Bundle savedInstanceState) {
         // TODO: show loading indicator
         super.onCreate(savedInstanceState);
+        // set up some data structures
         gameIndicies = new HashMap<Integer, Game>();
+        storage = new SessionStorage(this);
+        // set up views
         setContentView(R.layout.game_list);
         context = new LoggedInContext((LoginCredentials) getIntent().getSerializableExtra("credentials"));
         gameList = (ListView) findViewById(R.id.game_list_list);
@@ -70,7 +72,7 @@ public class GameList extends Activity implements JoinGameDialogFragment.JoinGam
             protected Either<Object,Either<LoggedInContext.AlreadyInGameException,PlayingContext>> doInBackground(Game... params) {
                 assert params.length == 1;
                 Game gameToJoin = params[0];
-                return context.joinGame(GameList.this, gameToJoin);
+                return context.joinGame(storage, gameToJoin);
             }
             @Override
             protected void onPostExecute(Either<Object,Either<LoggedInContext.AlreadyInGameException,PlayingContext>> res) {
@@ -80,6 +82,8 @@ public class GameList extends Activity implements JoinGameDialogFragment.JoinGam
                 if(joinRes instanceof Left) {
                     throw new RuntimeException("already in game");
                 } else {
+                    startService(new Intent(GameList.this, LocationService.class));
+                    // show game
                     Intent showGame = new Intent(GameList.this, ShowGame.class);
                     PlayingContext ctx = joinRes.getRight();
                     showGame.putExtra("credentials", ctx.getCredentials());

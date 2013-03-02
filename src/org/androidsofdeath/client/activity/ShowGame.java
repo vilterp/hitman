@@ -11,15 +11,18 @@ import org.androidsofdeath.client.R;
 import org.androidsofdeath.client.model.Game;
 import org.androidsofdeath.client.model.LoginCredentials;
 import org.androidsofdeath.client.model.PlayingContext;
+import org.androidsofdeath.client.model.SessionStorage;
 
 public class ShowGame extends Activity {
 
     private static final String TAG = "HITMAN-ShowGame";
     private PlayingContext context;
+    private SessionStorage storage;
 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.show_game);
+        storage = new SessionStorage(this);
         context = new PlayingContext((Game) getIntent().getSerializableExtra("game"),
                         (LoginCredentials) getIntent().getSerializableExtra("credentials"));
     }
@@ -35,7 +38,7 @@ public class ShowGame extends Activity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.show_game_leave:
-                context.leaveGame(this);
+                storage.clearGameId();
                 Log.i(TAG, "leave game");
                 finish();
                 break;
