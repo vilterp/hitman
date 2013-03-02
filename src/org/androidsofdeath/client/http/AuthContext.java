@@ -26,6 +26,8 @@ public abstract class AuthContext {
 
     private static final String TAG = "HITMAN-AuthContext";
     public static final List<Header> NO_HEADERS = new ArrayList<Header>(0);
+    public static final String CONTENT_TYPE_JSON = "application/json";
+    public static final String CONTENT_TYPE_ANY = "*/*";
 
     public abstract String getDomain();
     public abstract int getPort();
@@ -96,7 +98,7 @@ public abstract class AuthContext {
         return collapse(
                  collapse(
                    collapse(
-                     execRequest(path, params, method, "application/json")
+                     execRequest(path, params, method, CONTENT_TYPE_JSON)
                    .bindRight(expectCodes(codes)))
                  .bindRight(getBody))
                .bindRight(parseJsonObject));
@@ -107,7 +109,7 @@ public abstract class AuthContext {
         return collapse(
                  collapse(
                    collapse(
-                     execRequest(path, params, method, "application/json")
+                     execRequest(path, params, method, CONTENT_TYPE_JSON)
                    .bindRight(expectCodes(codes)))
                  .bindRight(getBody))
                .bindRight(parseJsonArray));

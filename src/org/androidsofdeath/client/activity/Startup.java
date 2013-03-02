@@ -32,6 +32,15 @@ public class Startup extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.waiting);
         loggedOutContext = new LoggedOutContext();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        getGcmIdAndLogin();
+    }
+
+    private void getGcmIdAndLogin() {
         receiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -41,7 +50,6 @@ public class Startup extends Activity {
                 unregisterReceiver(receiver);
                 receiver = null;
             }
-
         };
         this.registerReceiver(receiver, new IntentFilter(GCMIntentService.REG_RECEIVED_ACTION));
         // register with GCM

@@ -1,8 +1,10 @@
 package org.androidsofdeath.client.model;
 
 import android.content.Context;
+import android.content.Intent;
 import com.google.common.base.Function;
 import org.androidsofdeath.client.http.*;
+import org.androidsofdeath.client.service.LocationService;
 import org.apache.http.Header;
 import org.apache.http.message.BasicHeader;
 import org.joda.time.DateTime;
@@ -111,6 +113,10 @@ public class LoggedInContext extends HitmanContext {
                         try {
                             if(jsonObject.getBoolean("success")) {
                                 getPrefs(context).edit().putInt(PREF_CURRENT_GAME_ID, game.getId()).commit();
+                                Intent startLocationService = new Intent(context, LocationService.class);
+                                startLocationService.putExtra("game", game);
+                                startLocationService.putExtra("credentials", credentials);
+                                context.startService(startLocationService);
                                 return new Right<AlreadyInGameException, PlayingContext>(
                                         new PlayingContext(game, credentials));
                             } else {

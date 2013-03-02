@@ -57,7 +57,8 @@
           </intent-filter>
         </receiver>
 
-        <service android:name=".service.GCMIntentService" />
+        <service android:name=".service.GCMIntentService"/>
+        <service android:name=".service.LocationService"/>
 
     </application>
 </manifest>
