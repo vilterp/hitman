@@ -24,23 +24,21 @@ public class LocationService extends Service {
 
     private SessionStorage storage;
     private PlayingContext context;
+    private LocationManager manager;
+    private LocationListener listener;
 
     @Override
     public void onCreate() {
         super.onCreate();
+        Log.i(TAG, "onCreate");
         storage = new SessionStorage(this);
-    }
-
-    @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.i(TAG, "onStartCommand");
         Game game = new Game(storage.readGameId(), null, null, null, null, true); // TODO: janky...
         LoginCredentials credentials = storage.readLoginCredentials();
         assert credentials != null;
         context = new PlayingContext(game, credentials);
         // set up location listener....
-        LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-        LocationListener locationListener = new LocationListener() {
+        manager = (LocationManager) getSystemService(LOCATION_SERVICE);
+        listener = new LocationListener() {
             public void onLocationChanged(Location location) {
                 new AsyncTask<Location, Void, Either<Object,HttpResponse>>() {
                     @Override
@@ -68,7 +66,12 @@ public class LocationService extends Service {
                 Log.i(TAG, "onProviderDisabled");
             }
         };
-        locationManager.requestLocationUpdates(MIN_INTERVAL, 0, new Criteria(), locationListener, null);
+        manager.requestLocationUpdates(MIN_INTERVAL, 0, new Criteria(), listener, null);
+    }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        Log.i(TAG, "onStartCommand");
         return START_STICKY;
     }
 
@@ -80,6 +83,7 @@ public class LocationService extends Service {
     @Override
     public void onDestroy() {
         Log.i(TAG, "onDestroy");
+        manager.removeUpdates(listener);
     }
 
 }
