@@ -1,6 +1,7 @@
 package com.hitman.client.model;
 
 import com.google.common.base.Function;
+import com.hitman.client.Util;
 import com.hitman.client.http.*;
 import org.apache.http.Header;
 import org.apache.http.message.BasicHeader;
@@ -52,8 +53,9 @@ public class LoggedInContext extends HitmanContext {
                         obj.getInt("id"),
                         obj.getString("name"),
                         loc,
-                        players,
                         startDate,
+                        players,
+                        null,
                         true
                     );
                     return new Right<JSONException, Game>(game);
@@ -64,9 +66,9 @@ public class LoggedInContext extends HitmanContext {
         };
 
     public Either<Object,Game> getGame(int id) {
-        return collapse(
-                 getJsonObjectExpectCodes(String.format("/games/%d", id), null, HTTPMethod.GET, 200)
-               .bindRight(gameFromJsonObject));
+        return Util.collapse(
+                getJsonObjectExpectCodes(String.format("/games/%d", id), null, HTTPMethod.GET, 200)
+                        .bindRight(gameFromJsonObject));
     }
     
     public Either<Object,Set<Game>> getGameList() {
@@ -91,11 +93,11 @@ public class LoggedInContext extends HitmanContext {
     public Either<Object,Game> createGame(Game game) {
         Map<String, String> params = new HashMap<String, String>();
         params.put("name", game.getName());
-        params.put("start_time", game.getStartDate().toString(ISODateTimeFormat.dateTime()));
+        params.put("start_time", game.getStartDateTime().toString(ISODateTimeFormat.dateTime()));
         params.put("location", game.getLocation().formatCommaSep());
-        return collapse(
-          getJsonObjectExpectCodes("/games/create", params, HTTPMethod.POST, 201)
-        .bindRight(gameFromJsonObject));
+        return Util.collapse(
+                getJsonObjectExpectCodes("/games/create", params, HTTPMethod.POST, 201)
+                        .bindRight(gameFromJsonObject));
     }
 
     public Either<Object,Either<AlreadyInGameException,PlayingContext>> joinGame(final SessionStorage storage, final Game game) {

@@ -11,7 +11,7 @@ import com.hitman.client.Util;
 import com.hitman.client.http.Either;
 import com.hitman.client.http.WrongSideException;
 import com.hitman.client.model.*;
-import com.hitman.client.service.GCMIntentService;
+import com.hitman.client.GCMIntentService;
 import com.hitman.client.service.LocationService;
 
 public class Startup extends Activity {

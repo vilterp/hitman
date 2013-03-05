@@ -53,7 +53,7 @@ public class NewGame extends Activity {
                         startDate.getDayOfMonth(), startTime.getCurrentHour(),
                         startTime.getCurrentMinute(), 0);
                 Game game = new Game(-1, gameName.getText().toString(),
-                                     location, new HashSet<Player>(), dateTime, false);
+                                     location, dateTime, new HashSet<Player>(), null, false);
                 submitButton.setEnabled(false);
                 final Toast toast = Toast.makeText(NewGame.this, "Creating game....", Toast.LENGTH_LONG);
                 toast.show();
@@ -63,7 +63,7 @@ public class NewGame extends Activity {
                                 doInBackground(Game... params) {
                         assert params.length == 0;
                         Game theGame = params[0];
-                        return LoggedInContext.collapse(context.createGame(theGame).bindRight(
+                        return Util.collapse(context.createGame(theGame).bindRight(
                                 new Function<Game, Either<Object, Either<LoggedInContext.AlreadyInGameException, PlayingContext>>>() {
                                     public Either<Object, Either<LoggedInContext.AlreadyInGameException, PlayingContext>> apply(Game game) {
                                         return context.joinGame(new SessionStorage(NewGame.this), game);

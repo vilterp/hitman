@@ -2,6 +2,7 @@ package com.hitman.client.http;
 
 import android.util.Log;
 import com.google.common.base.Function;
+import com.hitman.client.Util;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -10,7 +11,6 @@ import org.apache.http.client.methods.*;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
@@ -32,28 +32,6 @@ public abstract class AuthContext {
     public abstract String getDomain();
     public abstract int getPort();
     public abstract List<Header> getHeaders();
-
-    public static Function<String,Either<JSONException,JSONObject>> parseJsonObject =
-        new Function<String, Either<JSONException, JSONObject>>() {
-            public Either<JSONException, JSONObject> apply(String s) {
-                try {
-                    return new Right<JSONException, JSONObject>(new JSONObject(s));
-                } catch (JSONException e) {
-                    return new Left<JSONException, JSONObject>(e);
-                }
-            }
-        };
-
-    public static Function<String,Either<JSONException,JSONArray>> parseJsonArray =
-        new Function<String, Either<JSONException, JSONArray>>() {
-            public Either<JSONException, JSONArray> apply(String s) {
-                try {
-                    return new Right<JSONException, JSONArray>(new JSONArray(s));
-                } catch (JSONException e) {
-                    return new Left<JSONException, JSONArray>(e);
-                }
-            }
-        };
 
     public static Function<HttpResponse,Either<IOException,String>> getBody =
         new Function<HttpResponse, Either<IOException, String>>() {
@@ -83,36 +61,26 @@ public abstract class AuthContext {
         };
     }
 
-    public static <A,B,C> Either<Object,C> collapse(Either<A, Either<B, C>> either) {
-        try {
-            Either<B, C> right = either.getRight();
-            C rightRight = right.getRight();
-            return new Right<Object, C>(rightRight);
-        } catch (WrongSideException e) {
-            return new Left<Object, C>(e.getEither().getValue());
-        }
-    }
-
     public Either<Object,JSONObject> getJsonObjectExpectCodes(String path, Map<String,String> params,
                                                               HTTPMethod method, int... codes) {
-        return collapse(
-                 collapse(
-                   collapse(
+        return Util.collapse(
+                 Util.collapse(
+                   Util.collapse(
                      execRequest(path, params, method, CONTENT_TYPE_JSON)
                    .bindRight(expectCodes(codes)))
                  .bindRight(getBody))
-               .bindRight(parseJsonObject));
+               .bindRight(Util.parseJsonObject));
     }
 
     public Either<Object,JSONArray> getJsonArrayExpectCodes(String path, Map<String,String> params,
                                                              HTTPMethod method, int... codes) {
-        return collapse(
-                 collapse(
-                   collapse(
+        return Util.collapse(
+                 Util.collapse(
+                   Util.collapse(
                      execRequest(path, params, method, CONTENT_TYPE_JSON)
                    .bindRight(expectCodes(codes)))
                  .bindRight(getBody))
-               .bindRight(parseJsonArray));
+               .bindRight(Util.parseJsonArray));
     }
 
     public Either<IOException,HttpResponse> execRequest(String path, Map<String, String> params,

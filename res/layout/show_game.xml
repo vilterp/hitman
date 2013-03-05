@@ -5,9 +5,39 @@
               android:layout_width="fill_parent"
               android:layout_height="fill_parent">
 
-    <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="This will be the show game screen."
-            android:id="@+id/textView" android:layout_gravity="left|center_vertical"/>
+    <LinearLayout android:orientation="vertical"
+                  android:layout_width="fill_parent"
+                  android:layout_height="fill_parent"
+                  android:id="@+id/show_game_countdown_container">
+
+        <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Game Starts In"
+                android:layout_gravity="center"/>
+        <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0d, 0h, 0m, 0s"
+                android:id="@+id/show_game_countdown_timer"
+                android:layout_gravity="center"
+                android:textSize="30sp"
+                android:textColor="#ff000c"/>
+        <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Game started. Waiting for server to assign target."
+                android:id="@+id/show_game_countdown_waiting_ind" android:layout_gravity="center" android:textColor="#009a10"
+                android:visibility="gone"/>
+    </LinearLayout>
+
+    <TextView android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:text="Game running."
+              android:id="@+id/show_game_running_ind"/>
+
+    <ListView android:layout_height="fill_parent"
+              android:layout_width="fill_parent"
+              android:id="@+id/show_game_events_list"/>
+
 </LinearLayout>

@@ -31,7 +31,7 @@ public class LocationService extends Service {
         super.onCreate();
         Log.i(TAG, "onCreate");
         storage = new SessionStorage(this);
-        Game game = new Game(storage.readGameId(), null, null, null, null, true); // TODO: janky...
+        Game game = new Game(storage.readGameId(), null, null, null, null, null, true); // TODO: janky...
         LoginCredentials credentials = storage.readLoginCredentials();
         assert credentials != null;
         context = new PlayingContext(game, credentials);
