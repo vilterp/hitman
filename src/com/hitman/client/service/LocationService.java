@@ -21,7 +21,6 @@ public class LocationService extends Service {
 //    private static final long MIN_INTERVAL = 1 * 60 * 1000; // 1 minute in ms
     private static final long MIN_INTERVAL = 10 * 1000;
 
-    private SessionStorage storage;
     private PlayingContext context;
     private LocationManager manager;
     private LocationListener listener;
@@ -30,11 +29,11 @@ public class LocationService extends Service {
     public void onCreate() {
         super.onCreate();
         Log.i(TAG, "onCreate");
-        storage = new SessionStorage(this);
-        Game game = new Game(storage.readGameId(), null, null, null, null, null, true); // TODO: janky...
-        LoginCredentials credentials = storage.readLoginCredentials();
-        assert credentials != null;
-        context = new PlayingContext(game, credentials);
+        try {
+            context = PlayingContext.readFromStorage(LoggedInContext.readFromStorage(new LoggedOutContext(this)));
+        } catch (StorageException e) {
+            throw new RuntimeException(e);
+        }
         // set up location listener....
         manager = (LocationManager) getSystemService(LOCATION_SERVICE);
         listener = new LocationListener() {

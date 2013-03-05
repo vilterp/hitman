@@ -1,5 +1,6 @@
 package com.hitman.client.model;
 
+import android.content.Context;
 import com.google.common.base.Function;
 import com.hitman.client.Util;
 import com.hitman.client.http.*;
@@ -20,7 +21,17 @@ public class LoggedInContext extends HitmanContext {
     private List<Header> headers;
     private LoginCredentials credentials;
 
-    public LoggedInContext(LoginCredentials credentials) {
+    public static LoggedInContext readFromStorage(LoggedOutContext ctx) throws SessionStorage.NoCredentialsException {
+        LoginCredentials credentials = ctx.getSessionStorage().readLoginCredentials();
+        return new LoggedInContext(ctx.getAndroidContext(), credentials);
+    }
+
+    public static LoggedInContext createFromLogin(LoggedOutContext ctx, LoginCredentials credentials) {
+        return new LoggedInContext(ctx.getAndroidContext(), credentials);
+    }
+
+    protected LoggedInContext(Context androidContext, LoginCredentials credentials) {
+        super(androidContext);
         this.credentials = credentials;
         this.headers = new ArrayList<Header>(1);
         headers.add(new BasicHeader(AUTH_HEADER, credentials.getGcmId()));
@@ -96,19 +107,19 @@ public class LoggedInContext extends HitmanContext {
         params.put("start_time", game.getStartDateTime().toString(ISODateTimeFormat.dateTime()));
         params.put("location", game.getLocation().formatCommaSep());
         return Util.collapse(
-                getJsonObjectExpectCodes("/games/create", params, HTTPMethod.POST, 201)
-                        .bindRight(gameFromJsonObject));
+                 getJsonObjectExpectCodes("/games/create", params, HTTPMethod.POST, 201)
+               .bindRight(gameFromJsonObject));
     }
 
-    public Either<Object,Either<AlreadyInGameException,PlayingContext>> joinGame(final SessionStorage storage, final Game game) {
+    public Either<Object,Either<AlreadyInGameException,PlayingContext>> joinGame(final Game game) {
         return getJsonObjectExpectCodes(String.format("/games/%d/join", game.getId()), null, HTTPMethod.PUT, 200, 403)
                 .bindRight(new Function<JSONObject, Either<AlreadyInGameException, PlayingContext>>() {
                     public Either<AlreadyInGameException, PlayingContext> apply(JSONObject jsonObject) {
                         try {
                             if(jsonObject.getBoolean("success")) {
-                                storage.saveGameId(game.getId());
+                                GameStorage.create(getAndroidContext(), game);
                                 return new Right<AlreadyInGameException, PlayingContext>(
-                                        new PlayingContext(game, credentials));
+                                        PlayingContext.createFromJoin(LoggedInContext.this, game));
                             } else {
                                 return new Left<AlreadyInGameException, PlayingContext>(new AlreadyInGameException());
                             }
@@ -119,7 +130,6 @@ public class LoggedInContext extends HitmanContext {
                 });
     }
 
-    public class AlreadyInGameException extends Exception {
-    }
+    public class AlreadyInGameException extends Exception {}
 
 }

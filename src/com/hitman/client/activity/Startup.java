@@ -22,27 +22,23 @@ public class Startup extends Activity {
 
 
     private static final int GET_LOGIN_CREDENTIALS = 1;
-    public static final String PREF_USERNAME = "username";
-    public static final String PREF_PASSWORD = "password";
 
     private LoggedOutContext loggedOutContext;
-    private SessionStorage storage;
     private BroadcastReceiver receiver;
 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.waiting);
-        loggedOutContext = new LoggedOutContext();
-        storage = new SessionStorage(this);
+        loggedOutContext = new LoggedOutContext(this);
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        getGcmIdAndLogin();
+        getGcmIdAndContinue();
     }
 
-    private void getGcmIdAndLogin() {
+    private void getGcmIdAndContinue() {
         // register with GCM
         GCMRegistrar.checkDevice(this);
         GCMRegistrar.checkManifest(this);
@@ -55,7 +51,7 @@ public class Startup extends Activity {
                 public void onReceive(Context context, Intent intent) {
                     String gcmId = intent.getStringExtra("registration");
                     // send HTTP POST to log in
-                    getCredentialsAndLogin(gcmId);
+                    getLicAndContinue(gcmId);
                     unregisterReceiver(receiver);
                     receiver = null;
                 }
@@ -65,16 +61,16 @@ public class Startup extends Activity {
         } else {
             Log.d(TAG, "Already registered");
             // launch login activity
-            getCredentialsAndLogin(gcmId);
+            getLicAndContinue(gcmId);
         }
     }
 
-    private void getCredentialsAndLogin(String gcmId) {
-        LoginCredentials credentials = storage.readLoginCredentials();
-        if(credentials == null) {
+    private void getLicAndContinue(String gcmId) {
+        try {
+            LoggedInContext loggedInContext = LoggedInContext.readFromStorage(loggedOutContext);
+            enterGameOrAskForGame(loggedInContext);
+        } catch (SessionStorage.NoCredentialsException e) {
             promptForCredentials(gcmId);
-        } else {
-            doLogin(credentials);
         }
     }
 
@@ -96,7 +92,7 @@ public class Startup extends Activity {
             @Override
             protected Either<Object, LoggedInContext> doInBackground(LoginCredentials... params) {
                 assert params.length == 1;
-                return loggedOutContext.doLogin(storage, params[0]);
+                return loggedOutContext.doLogin(params[0]);
             }
             protected void onPostExecute(Either<Object,LoggedInContext> result) {
                 try {
@@ -110,36 +106,14 @@ public class Startup extends Activity {
     }
 
     private void enterGameOrAskForGame(final LoggedInContext context) {
-        int gameId = storage.readGameId();
-        if(gameId == -1) {
+        try {
+            PlayingContext playingContext = PlayingContext.readFromStorage(context);
+            Startup.this.startService(new Intent(Startup.this, LocationService.class));
+            Intent launchShowGame = new Intent(Startup.this, ShowGame.class);
+            startActivity(launchShowGame);
+        } catch (GameStorage.NoGameException e) {
             Intent launchGameList = new Intent(this, GameList.class);
-            launchGameList.putExtra("credentials", context.getCredentials());
             startActivity(launchGameList);
-        } else {
-            // get game
-            new AsyncTask<Integer, Void, Either<Object,Game>>() {
-                @Override
-                protected Either<Object,Game> doInBackground(Integer... params) {
-                    assert params.length == 1;
-                    int theGameId = params[0];
-                    return context.getGame(theGameId);
-                }
-                @Override
-                public void onPostExecute(Either<Object,Game> result) {
-                    try {
-                        Game game = result.getRight();
-                        // start location service
-                        Startup.this.startService(new Intent(Startup.this, LocationService.class));
-                        // launch show game
-                        Intent launchShowGame = new Intent(Startup.this, ShowGame.class);
-                        launchShowGame.putExtra("credentials", context.getCredentials());
-                        launchShowGame.putExtra("game", game);
-                        startActivity(launchShowGame);
-                    } catch (WrongSideException e) {
-                        Util.handleError(Startup.this, e);
-                    }
-                }
-            }.execute(gameId);
         }
     }
 

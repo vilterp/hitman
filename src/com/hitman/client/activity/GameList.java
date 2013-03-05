@@ -26,11 +26,14 @@ public class GameList extends Activity implements JoinGameDialogFragment.JoinGam
     public static final String TAG = "HITMAN_LoggedInContext";
     private static final int REQ_NEW_GAME = 1;
     private LoggedInContext context;
+
+    private TextView currentlyInGame;
     private ListView gameList;
     private ProgressBar spinner;
     private State state;
     private HashMap<Integer, Game> gameIndicies;
-    private SessionStorage storage;
+
+    private Game currentGame;
 
     enum State {
         LOADING,
@@ -42,25 +45,49 @@ public class GameList extends Activity implements JoinGameDialogFragment.JoinGam
         super.onCreate(savedInstanceState);
         // set up some data structures
         gameIndicies = new HashMap<Integer, Game>();
-        storage = new SessionStorage(this);
+        try {
+            context = LoggedInContext.readFromStorage(new LoggedOutContext(this));
+        } catch (SessionStorage.NoCredentialsException e) {
+            throw new RuntimeException(e);
+        }
         // set up views
         setContentView(R.layout.game_list);
-        context = new LoggedInContext((LoginCredentials) getIntent().getSerializableExtra("credentials"));
+        currentlyInGame = (TextView) findViewById(R.id.game_list_currently_in_game);
         gameList = (ListView) findViewById(R.id.game_list_list);
         gameList.setEmptyView(findViewById(R.id.game_list_empty));
         spinner = (ProgressBar) findViewById(R.id.progress);
         gameList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Game game = gameIndicies.get(position);
-                DialogFragment joinDialog = new JoinGameDialogFragment(game);
-                joinDialog.show(getFragmentManager(), "JoinGameDialogFragment");
+                if(currentGame == null) {
+                    Game game = gameIndicies.get(position);
+                    DialogFragment joinDialog = new JoinGameDialogFragment(game);
+                    joinDialog.show(getFragmentManager(), "JoinGameDialogFragment");
+                } else {
+                    Toast.makeText(GameList.this, "Already in game", Toast.LENGTH_SHORT).show();
+                }
             }
         });
+        currentGame = null;
         loadList();
     }
 
     public void onResume() {
         super.onResume();
+        try {
+            context = PlayingContext.readFromStorage(context);
+        } catch (GameStorage.NoGameException e) {}
+        if(context instanceof PlayingContext) {
+            currentGame = ((PlayingContext) context).getGameStorage().getGame();
+            currentlyInGame.setVisibility(View.VISIBLE);
+            currentlyInGame.setText(String.format("Currently in game %s", currentGame.getName()));
+            currentlyInGame.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View v) {
+                    startActivity(new Intent(GameList.this, ShowGame.class));
+                }
+            });
+        } else {
+            currentlyInGame.setVisibility(View.GONE);
+        }
         loadList();
     }
 
@@ -72,7 +99,7 @@ public class GameList extends Activity implements JoinGameDialogFragment.JoinGam
             protected Either<Object,Either<LoggedInContext.AlreadyInGameException,PlayingContext>> doInBackground(Game... params) {
                 assert params.length == 1;
                 Game gameToJoin = params[0];
-                return context.joinGame(storage, gameToJoin);
+                return context.joinGame(gameToJoin);
             }
             @Override
             protected void onPostExecute(Either<Object,Either<LoggedInContext.AlreadyInGameException,PlayingContext>> res) {
@@ -85,9 +112,6 @@ public class GameList extends Activity implements JoinGameDialogFragment.JoinGam
                     startService(new Intent(GameList.this, LocationService.class));
                     // show game
                     Intent showGame = new Intent(GameList.this, ShowGame.class);
-                    PlayingContext ctx = joinRes.getRight();
-                    showGame.putExtra("credentials", ctx.getCredentials());
-                    showGame.putExtra("game", ctx.getGame());
                     startActivity(showGame);
                 }
                 } catch (WrongSideException e) {
@@ -141,7 +165,6 @@ public class GameList extends Activity implements JoinGameDialogFragment.JoinGam
         assert reqCode == REQ_NEW_GAME;
         assert resCode == RESULT_OK;
         Intent showGame = new Intent(this, ShowGame.class);
-        showGame.putExtras(data.getExtras());
         startActivity(showGame);
     }
 

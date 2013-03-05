@@ -10,10 +10,7 @@ import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import com.hitman.client.R;
-import com.hitman.client.model.Game;
-import com.hitman.client.model.LoginCredentials;
-import com.hitman.client.model.PlayingContext;
-import com.hitman.client.model.SessionStorage;
+import com.hitman.client.model.*;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.joda.time.Interval;
@@ -22,10 +19,7 @@ public class ShowGame extends Activity {
 
     private static final String TAG = "HITMAN-ShowGame";
     private PlayingContext context;
-    private SessionStorage storage;
 
-    private Game game;
-    
     private State state;
 
     private TextView runningInd;
@@ -44,17 +38,18 @@ public class ShowGame extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.show_game);
-        storage = new SessionStorage(this);
-        game = (Game) getIntent().getSerializableExtra("game");
-        context = new PlayingContext(game,
-                        (LoginCredentials) getIntent().getSerializableExtra("credentials"));
+        try {
+            context = PlayingContext.readFromStorage(LoggedInContext.readFromStorage(new LoggedOutContext(this)));
+        } catch (StorageException e) {
+            throw new RuntimeException(e);
+        }
         // view refs
         countdownContainer = (LinearLayout) findViewById(R.id.show_game_countdown_container);
         countdownTimer = (TextView) findViewById(R.id.show_game_countdown_timer);
         waitingInd = (TextView) findViewById(R.id.show_game_countdown_waiting_ind);
         runningInd = (TextView) findViewById(R.id.show_game_running_ind);
         // set up initial state
-        if(DateTime.now().isBefore(game.getStartDateTime())) {
+        if(DateTime.now().isBefore(context.getGameStorage().getGame().getStartDateTime())) {
             // countdown
             enterState(State.COUNTDOWN);
             countdownContainer.setVisibility(View.VISIBLE);
@@ -68,7 +63,7 @@ public class ShowGame extends Activity {
     private void startTicker() {
         Thread ticker = new Thread(new Runnable() {
                     public void run() {
-            DateTime countdownTo = game.getStartDateTime();
+            DateTime countdownTo = context.getGameStorage().getGame().getStartDateTime();
             while(true) {
                 DateTime now = DateTime.now();
                 if(now.isBefore(countdownTo)) {
@@ -118,7 +113,7 @@ public class ShowGame extends Activity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.show_game_leave:
-                storage.clearGameId();
+                context.leaveGame();
                 Log.i(TAG, "leave game");
                 finish();
                 break;

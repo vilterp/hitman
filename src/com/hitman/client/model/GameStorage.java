@@ -1,15 +1,32 @@
 package com.hitman.client.model;
 
 import android.content.Context;
-import com.google.gson.Gson;
+import com.google.gson.*;
+import org.joda.time.DateTime;
 
 import java.io.*;
+import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.List;
 
 public class GameStorage {
 
-    private static Gson gson = new Gson();
+    static class DateTimeTypeConverter implements JsonSerializer<DateTime>,JsonDeserializer<DateTime> {
+        public JsonElement serialize(DateTime src, Type srcType, JsonSerializationContext context) {
+            return new JsonPrimitive(src.toString());
+        }
+        public DateTime deserialize(JsonElement json, Type type, JsonDeserializationContext context)
+          throws JsonParseException {
+            return new DateTime(json.getAsString());
+        }
+    }
+
+    private static Gson gson;
+    static {
+        gson = new GsonBuilder()
+                .registerTypeAdapter(DateTime.class, new DateTimeTypeConverter())
+                .create();
+    }
 
     private static final String GAME_FILE_NAME = "game.json";
     private Context context;
@@ -21,7 +38,7 @@ public class GameStorage {
         this.game = game;
     }
 
-    public static GameStorage read(Context context) {
+    public static GameStorage read(Context context) throws NoGameException {
         if(hasGame(context)) {
             try {
                 FileInputStream input = context.openFileInput(GAME_FILE_NAME);
@@ -32,9 +49,11 @@ public class GameStorage {
                 throw new RuntimeException(e);
             }
         } else {
-            throw new IllegalStateException("no game. use create");
+            throw new NoGameException();
         }
     }
+
+    public static class NoGameException extends StorageException {}
 
     public static GameStorage create(Context context, Game game) {
         if(hasGame(context)) {
@@ -46,7 +65,7 @@ public class GameStorage {
         }
     }
 
-    public void clear(Context context) {
+    public void clear() {
         checkCleared();
         if(hasGame(context)) {
             context.deleteFile(GAME_FILE_NAME);

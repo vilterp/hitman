@@ -1,6 +1,7 @@
 package com.hitman.client.model;
 
 import org.joda.time.DateTime;
+import org.json.JSONObject;
 
 import java.io.Serializable;
 import java.util.List;

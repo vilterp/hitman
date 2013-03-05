@@ -86,7 +86,6 @@ public abstract class AuthContext {
     public Either<IOException,HttpResponse> execRequest(String path, Map<String, String> params,
                                                          HTTPMethod method, String acceptType) {
         assert path.charAt(0) == '/';
-        Log.i(TAG, String.format("%s %s %s", method, path, params));
         DefaultHttpClient httpClient = new DefaultHttpClient();
         String url = String.format("http://%s:%d%s/", getDomain(), getPort(), path);
         if(params == null) {
@@ -124,7 +123,9 @@ public abstract class AuthContext {
         }
 
         try {
-            return new Right<IOException, HttpResponse>(httpClient.execute(httpReq));
+            HttpResponse resp = httpClient.execute(httpReq);
+            Log.i(TAG, String.format("%s %s %s => %d", method, path, params, resp.getStatusLine().getStatusCode()));
+            return new Right<IOException, HttpResponse>(resp);
         } catch (IOException e) {
             return new Left<IOException, HttpResponse>(e);
         }

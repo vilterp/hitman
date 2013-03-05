@@ -1,5 +1,6 @@
 package com.hitman.client.model;
 
+import android.content.Context;
 import com.google.common.base.Function;
 import com.hitman.client.http.Either;
 import com.hitman.client.http.HTTPMethod;
@@ -12,15 +13,16 @@ import java.util.Map;
 
 public class LoggedOutContext extends HitmanContext {
 
-    private static final String PREF_USERNAME = "username";
-    private static final String PREF_PASSWORD = "password";
+    public LoggedOutContext(Context androidContext) {
+        super(androidContext);
+    }
 
     @Override
     public List<Header> getHeaders() {
         return NO_HEADERS;
     }
 
-    public Either<Object,LoggedInContext> doSignup(final SessionStorage storage, final LoginCredentials credentials) {
+    public Either<Object,LoggedInContext> doSignup(final LoginCredentials credentials) {
         Map<String, String> params = new HashMap<String, String>();
         params.put("user", credentials.getUsername());
         params.put("password", credentials.getPassword());
@@ -28,13 +30,13 @@ public class LoggedOutContext extends HitmanContext {
         return getJsonObjectExpectCodes("/users/signup", params, HTTPMethod.POST, 200)
                 .bindRight(new Function<JSONObject, LoggedInContext>() {
                     public LoggedInContext apply(JSONObject jsonObject) {
-                        storage.saveLoginCredentials(credentials);
-                        return new LoggedInContext(credentials);
+                        getSessionStorage().saveLoginCredentials(credentials);
+                        return LoggedInContext.createFromLogin(LoggedOutContext.this, credentials);
                     }
                 });
     }
 
-    public Either<Object,LoggedInContext> doLogin(final SessionStorage storage, final LoginCredentials credentials) {
+    public Either<Object,LoggedInContext> doLogin(final LoginCredentials credentials) {
         Map<String, String> params = new HashMap<String, String>();
         params.put("gcm_regid", credentials.getGcmId());
         params.put("username", credentials.getUsername());
@@ -42,8 +44,8 @@ public class LoggedOutContext extends HitmanContext {
         return getJsonObjectExpectCodes("/users/login", params, HTTPMethod.POST, 200)
                 .bindRight(new Function<JSONObject, LoggedInContext>() {
                     public LoggedInContext apply(JSONObject jsonObject) {
-                        storage.saveLoginCredentials(credentials);
-                        return new LoggedInContext(credentials);
+                        getSessionStorage().saveLoginCredentials(credentials);
+                        return LoggedInContext.createFromLogin(LoggedOutContext.this, credentials);
                     }
                 });
     }

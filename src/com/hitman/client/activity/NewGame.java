@@ -37,7 +37,11 @@ public class NewGame extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.new_game);
         location = null;
-        context = new LoggedInContext((LoginCredentials) getIntent().getSerializableExtra("credentials"));
+        try {
+            context = LoggedInContext.readFromStorage(new LoggedOutContext(this));
+        } catch (SessionStorage.NoCredentialsException e) {
+            throw new RuntimeException(e);
+        }
         // get refs to shit
         gameName = (EditText) findViewById(R.id.new_game_game_name);
         startDate = (DatePicker) findViewById(R.id.new_game_date);
@@ -66,7 +70,7 @@ public class NewGame extends Activity {
                         return Util.collapse(context.createGame(theGame).bindRight(
                                 new Function<Game, Either<Object, Either<LoggedInContext.AlreadyInGameException, PlayingContext>>>() {
                                     public Either<Object, Either<LoggedInContext.AlreadyInGameException, PlayingContext>> apply(Game game) {
-                                        return context.joinGame(new SessionStorage(NewGame.this), game);
+                                        return context.joinGame(game);
                                     }
                                 }));
                     }
@@ -83,8 +87,6 @@ public class NewGame extends Activity {
                                 startService(new Intent(NewGame.this, LocationService.class));
                                 // go back to game list, which will launch show game
                                 Intent data = new Intent();
-                                data.putExtra("credentials", ctx.getCredentials());
-                                data.putExtra("game", ctx.getGame());
                                 setResult(RESULT_OK, data);
                                 finish();
                             }

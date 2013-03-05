@@ -17,12 +17,14 @@ public class SessionStorage {
         prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
     }
 
-    public LoginCredentials readLoginCredentials() {
+    public class NoCredentialsException extends StorageException {}
+
+    public LoginCredentials readLoginCredentials() throws NoCredentialsException {
         String un = prefs.getString(USERNAME, null);
         String pw = prefs.getString(PASSWORD, null);
         String gcmId = prefs.getString(GCMID, null);
         if(un == null || pw == null || gcmId == null) {
-            return null;
+            throw new NoCredentialsException();
         } else {
             return new LoginCredentials(gcmId, un, pw);
         }
@@ -35,16 +37,11 @@ public class SessionStorage {
              .commit();
     }
 
-    public int readGameId() {
-        return prefs.getInt(GAME_ID, -1);
-    }
-
-    public void saveGameId(int id) {
-        prefs.edit().putInt(GAME_ID, id).commit();
-    }
-
-    public void clearGameId() {
-        prefs.edit().remove(GAME_ID).commit();
+    public void clearLoginCredentials() {
+        prefs.edit().remove(USERNAME)
+                    .remove(PASSWORD)
+                    .remove(GAME_ID)
+             .commit();
     }
 
 }
