@@ -117,7 +117,6 @@ public class LoggedInContext extends HitmanContext {
                     public Either<AlreadyInGameException, PlayingContext> apply(JSONObject jsonObject) {
                         try {
                             if(jsonObject.getBoolean("success")) {
-                                GameStorage.create(getAndroidContext(), game);
                                 return new Right<AlreadyInGameException, PlayingContext>(
                                         PlayingContext.createFromJoin(LoggedInContext.this, game));
                             } else {

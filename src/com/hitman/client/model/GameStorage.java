@@ -110,8 +110,9 @@ public class GameStorage {
         assert game.getPlayers() != null;
         try {
             FileOutputStream out = context.openFileOutput(GAME_FILE_NAME, Context.MODE_PRIVATE);
-            Gson gson = new Gson();
-            gson.toJson(game, new OutputStreamWriter(out));
+//            gson.toJson(game, new OutputStreamWriter(out));
+            String json = gson.toJson(game);
+            out.write(json.getBytes("UTF-8"));
             out.close();
         } catch (IOException e) {
             throw new RuntimeException(e);
