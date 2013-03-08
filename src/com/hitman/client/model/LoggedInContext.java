@@ -108,7 +108,7 @@ public class LoggedInContext extends HitmanContext {
         params.put("start_time", game.getStartDateTime().toString(ISODateTimeFormat.dateTime()));
         params.put("location", game.getLocation().formatCommaSep());
         return Util.collapse(
-                 getJsonObjectExpectCodes("/games/create", params, HTTPMethod.POST, 201)
+                 getJsonObjectExpectCodes("/games/create/", params, HTTPMethod.POST, 201)
                .bindRight(gameFromJsonObject));
     }
 

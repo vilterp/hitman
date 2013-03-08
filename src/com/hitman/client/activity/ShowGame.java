@@ -23,6 +23,7 @@ import com.hitman.client.model.*;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.joda.time.Interval;
+import org.joda.time.Period;
 import org.joda.time.format.DateTimeFormat;
 
 import java.util.ArrayList;
@@ -84,7 +85,7 @@ public class ShowGame extends Activity {
         // events list
         gameEventsList = (ListView) findViewById(R.id.show_game_events_list);
         // set up initial state
-        if(DateTime.now().isBefore(context.getGameStorage().getGame().getStartDateTime())) {
+        if(context.getGameStorage().getGame().getStartDateTime().isAfterNow()) {
             // countdown
             enterCountdownState();
         } else {
@@ -145,7 +146,7 @@ public class ShowGame extends Activity {
         countdownContainer.setVisibility(View.VISIBLE);
         waitingInd.setVisibility(View.GONE);
         gameRunningInfoContainer.setVisibility(View.GONE);
-        playersLeftInd.setText("Players joined:  ");
+        playersLeftLabel.setText("Players joined:  ");
         startTicker();
     }
 
@@ -154,7 +155,14 @@ public class ShowGame extends Activity {
         countdownContainer.setVisibility(View.GONE);
         gameRunningInfoContainer.setVisibility(View.VISIBLE);
         waitingInd.setVisibility(View.GONE);
-        playersLeftInd.setText("Players left:  ");
+        playersLeftLabel.setText("Players left:  ");
+    }
+
+    private void enterWaitingState() {
+        enterState(State.WAITING_FOR_TARGET);
+        countdownContainer.setVisibility(View.GONE);
+        gameRunningInfoContainer.setVisibility(View.GONE);
+        waitingInd.setVisibility(View.VISIBLE);
     }
 
     private void setBasicInfo() {
@@ -173,12 +181,12 @@ public class ShowGame extends Activity {
             while(true) {
                 DateTime now = DateTime.now();
                 if(now.isBefore(countdownTo)) {
-                    final Duration diff = new Interval(now.toInstant(), countdownTo.toInstant()).toDuration();
+                    final Period diff = new Interval(now, countdownTo).toPeriod();
                     runOnUiThread(new Runnable() {
                         public void run() {
                             countdownTimer.setText(String.format("%dd, %dh, %dm, %ds",
-                                    diff.getStandardDays(), diff.getStandardHours(),
-                                    diff.getStandardMinutes(), diff.getStandardSeconds()));
+                                    diff.getDays(), diff.getHours(),
+                                    diff.getMinutes(), diff.getSeconds()));
                         }
                     });
                     try {
@@ -189,10 +197,7 @@ public class ShowGame extends Activity {
                 } else {
                     runOnUiThread(new Runnable() {
                         public void run() {
-                            countdownTimer.setVisibility(View.GONE);
-                            waitingInd.setVisibility(View.VISIBLE);
-                            state = State.WAITING_FOR_TARGET;
-                            enterState(State.WAITING_FOR_TARGET);
+                            enterWaitingState();
                         }
                     });
                     return;

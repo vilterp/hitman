@@ -35,50 +35,43 @@ public class GCMIntentService extends GCMBaseIntentService {
     private static final int GAME_STARTED_MSGID = 4;
     private static final int JOIN_MSGID = 5;
 
-    private PlayingContext context;
-
-
     public GCMIntentService() {
         super(Startup.SENDER_ID);
-        try {
-            context = PlayingContext.readFromStorage(LoggedInContext.readFromStorage(new LoggedOutContext(this)));
-        } catch (StorageException e) {
-            throw new RuntimeException(e);
-        }
     }
 
-    private static Function<JSONObject,Either<Exception,GameEvent>> parseMessage = new Function<JSONObject, Either<Exception, GameEvent>>() {
-        public Either<Exception, GameEvent> apply(JSONObject obj) {
-            try {
-                String type = obj.getString("type");
-                GameEvent evt = null;
-                if (type.equals("location_stationary")) {
-                    evt = new StationaryLocationEvent(DateTime.now(), obj.getString("location"));
-                } else if (type.equals("start_game")) {
-                    evt = new GameStartedEvent(DateTime.now(), obj.getString("target"));
-                } else if(type.equals("location_moving")) {
-                    evt = new MovingLocationEvent(DateTime.now(), obj.getString("locationFrom"), obj.getString("locationTo"));
-                } else if(type.equals("reassigned")) {
-                    evt = new TargetAssignedEvent(DateTime.now(), obj.getString("target"));
-                } else if(type.equals("killed")) {
-                    evt = new KilledEvent(DateTime.now());
-                } else {
-                    return new Left<Exception, GameEvent>(new Exception("unrecognized event type " + type));
-                }
-                return new Right<Exception, GameEvent>(evt);
-            } catch (JSONException e) {
-                return new Left<Exception, GameEvent>(e);
-            }
+    private static Either<Exception,GameEvent> parseMessage(Intent intent) {
+        String type = intent.getStringExtra("type");
+        GameEvent evt = null;
+        if (type.equals("location_stationary")) {
+            evt = new StationaryLocationEvent(DateTime.now(), intent.getStringExtra("location"));
+        } else if (type.equals("game_start")) {
+            evt = new GameStartedEvent(DateTime.now(), intent.getStringExtra("target"));
+        } else if(type.equals("location_moving")) {
+            evt = new MovingLocationEvent(DateTime.now(), intent.getStringExtra("locationFrom"), intent.getStringExtra("locationTo"));
+        } else if(type.equals("reassigned")) {
+            evt = new TargetAssignedEvent(DateTime.now(), intent.getStringExtra("target"));
+        } else if(type.equals("killed")) {
+            evt = new KilledEvent(DateTime.now());
+        } else {
+            return new Left<Exception, GameEvent>(new Exception("unrecognized event type " + type));
         }
-    };
-
+        return new Right<Exception, GameEvent>(evt);
+    }
+    
     @Override
     protected void onMessage(Context androidContext, Intent intent) {
         Log.i(TAG, "onMessage: " + intent.toString() + intent.getExtras().toString());
 
-        String json = ""; // TODO: actually get this
+        // TODO: asyncify
+        PlayingContext context = null;
+        try {
+            context = PlayingContext.readFromStorage(LoggedInContext.readFromStorage(new LoggedOutContext(this)));
+        } catch (StorageException e) {
+            e.printStackTrace();
+        }
+
         // TODO: checkForNull or something
-        Either<Object, GameEvent> parseRes = Util.collapse(Util.parseJsonObject.apply(json).bindRight(parseMessage));
+        Either<Exception, GameEvent> parseRes = parseMessage(intent);
         try {
             GameEvent evt = parseRes.getRight();
             if(evt instanceof StationaryLocationEvent) {
@@ -98,11 +91,12 @@ public class GCMIntentService extends GCMBaseIntentService {
                 Log.i(TAG, "you were killed");
             }
             // update model, send broadcast
+            final PlayingContext finalContext = context;
             new AsyncTask<GameEvent, Void, Void>() {
                 @Override
                 protected Void doInBackground(GameEvent... params) {
                     assert params.length == 1;
-                    context.getGameStorage().addEvent(params[0]);
+                    finalContext.getGameStorage().addEvent(params[0]);
                     return null;
                 }
                 @Override

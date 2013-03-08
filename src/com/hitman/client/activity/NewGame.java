@@ -53,7 +53,8 @@ public class NewGame extends Activity {
         // register submit callback
         submitButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                DateTime dateTime = new DateTime(startDate.getYear(), startDate.getMonth(),
+                // http://stackoverflow.com/questions/4467816/datepicker-shows-wrong-value-of-month
+                DateTime dateTime = new DateTime(startDate.getYear(), startDate.getMonth() + 1,
                         startDate.getDayOfMonth(), startTime.getCurrentHour(),
                         startTime.getCurrentMinute(), 0);
                 Game game = new Game(-1, gameName.getText().toString(),

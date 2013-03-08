@@ -2,8 +2,9 @@ package com.hitman.client.model;
 
 import android.content.Context;
 import com.google.gson.*;
-import com.hitman.client.event.GameEvent;
-import com.hitman.client.event.JoinEvent;
+import com.google.gson.reflect.TypeToken;
+import com.google.gson.typeadapters.RuntimeTypeAdapterFactory;
+import com.hitman.client.event.*;
 import org.joda.time.DateTime;
 
 import java.io.*;
@@ -25,8 +26,18 @@ public class GameStorage {
 
     private static Gson gson;
     static {
+        TypeAdapterFactory factory =
+            RuntimeTypeAdapterFactory.of(GameEvent.class)
+                .registerSubtype(JoinEvent.class)
+                .registerSubtype(YouJoinedEvent.class)
+                .registerSubtype(KilledEvent.class)
+                .registerSubtype(TargetAssignedEvent.class)
+                .registerSubtype(GameStartedEvent.class)
+                .registerSubtype(StationaryLocationEvent.class)
+                .registerSubtype(MovingLocationEvent.class);
         gson = new GsonBuilder()
                 .registerTypeAdapter(DateTime.class, new DateTimeTypeConverter())
+                .registerTypeAdapterFactory(factory)
                 .create();
     }
 
@@ -71,6 +82,7 @@ public class GameStorage {
         checkCleared();
         if(hasGame(context)) {
             context.deleteFile(GAME_FILE_NAME);
+            cleared = true;
         } else {
             throw new IllegalStateException("no game to clear");
         }
