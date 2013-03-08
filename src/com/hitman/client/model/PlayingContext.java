@@ -36,13 +36,27 @@ public class PlayingContext extends LoggedInContext {
         return gameStorage;
     }
 
+    /**
+     * caution -- this is blocking
+     * @return newly updated GameStorage object
+     */
+    public GameStorage reloadGameStorage() {
+        try {
+            gameStorage = GameStorage.read(getAndroidContext());
+            return gameStorage;
+        } catch (GameStorage.NoGameException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public Either<Object, HttpResponse> updateLocation(Location loc) {
         checkClosed();
         Map<String,String> params = new HashMap<String,String>();
         params.put("location", String.format("%f,%f", loc.getLatitude(), loc.getLongitude()));
         return Util.collapse(
-                execRequest("/games/sensors/location/update", params, HTTPMethod.POST, CONTENT_TYPE_ANY)
-                        .bindRight(expectCodes(201)));
+                 execRequest(String.format("/games/%d/sensors/location/update", gameStorage.getGame().getId()),
+                             params, HTTPMethod.POST, CONTENT_TYPE_ANY)
+               .bindRight(expectCodes(201)));
     }
 
     public void leaveGame() {

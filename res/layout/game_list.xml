@@ -22,5 +22,6 @@
               android:layout_width="match_parent"
               android:layout_height="match_parent"
               android:text="No games. Better create one!"
-              android:visibility="gone"/>
+              android:textAlignment="center"
+              android:visibility="gone" android:textSize="30sp"/>
 </LinearLayout>

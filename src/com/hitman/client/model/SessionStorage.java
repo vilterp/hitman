@@ -10,6 +10,7 @@ public class SessionStorage {
     public static final String PASSWORD = "password";
     public static final String GCMID = "gcmid";
     public static final String GAME_ID = "gameId";
+    public static final String TARGET = "target";
 
     private SharedPreferences prefs;
 
@@ -35,6 +36,14 @@ public class SessionStorage {
                     .putString(PASSWORD, credentials.getPassword())
                     .putString(GCMID, credentials.getGcmId())
              .commit();
+    }
+
+    public String getCurrentTarget() {
+        return prefs.getString(TARGET, null);
+    }
+
+    public void setCurrentTarget(String target) {
+        prefs.edit().putString(TARGET, target).commit();
     }
 
     public void clearLoginCredentials() {

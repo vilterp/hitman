@@ -1,20 +1,23 @@
-package com.hitman.client.model;
+package com.hitman.client.event;
 
-import com.hitman.client.gcm.LocationStationaryMessage;
 import org.joda.time.DateTime;
 
 public class StationaryLocationEvent extends GameEvent {
 
     private String placeName;
 
-    public StationaryLocationEvent(DateTime dateTime, LocationStationaryMessage event) {
+    public StationaryLocationEvent(DateTime dateTime, String placeName) {
         super(dateTime);
-        placeName = event.getPlaceName();
+        this.placeName = placeName;
     }
 
     @Override
     public String getHumanReadableDescr() {
         return String.format("Your target was seen at %s", placeName);
+    }
+
+    public String getPlaceName() {
+        return placeName;
     }
 
 }

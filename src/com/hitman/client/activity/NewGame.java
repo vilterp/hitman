@@ -92,6 +92,7 @@ public class NewGame extends Activity {
                             }
                         } catch (WrongSideException e) {
                             Util.handleError(NewGame.this, e);
+                            submitButton.setEnabled(true);
                         }
                     }
                 }.execute(game);

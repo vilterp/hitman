@@ -2,6 +2,8 @@ package com.hitman.client.model;
 
 import android.content.Context;
 import com.google.gson.*;
+import com.hitman.client.event.GameEvent;
+import com.hitman.client.event.JoinEvent;
 import org.joda.time.DateTime;
 
 import java.io.*;
@@ -81,6 +83,9 @@ public class GameStorage {
 
     public void addEvent(GameEvent evt) {
         game.getEvents().add(evt);
+        if(evt instanceof JoinEvent) {
+            game.getPlayers().add(new Player(((JoinEvent)evt).getUser(), -1));
+        }
         save();
     }
 
@@ -108,6 +113,7 @@ public class GameStorage {
         assert game.getId() >= 0;
         assert game.getName() != null;
         assert game.getPlayers() != null;
+        assert game.getEvents() != null;
         try {
             FileOutputStream out = context.openFileOutput(GAME_FILE_NAME, Context.MODE_PRIVATE);
 //            gson.toJson(game, new OutputStreamWriter(out));

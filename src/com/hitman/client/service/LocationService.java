@@ -18,8 +18,8 @@ import org.apache.http.HttpResponse;
 public class LocationService extends Service {
 
     private static final String TAG = "HITMAN-LocationService";
-//    private static final long MIN_INTERVAL = 1 * 60 * 1000; // 1 minute in ms
-    private static final long MIN_INTERVAL = 10 * 1000;
+    private static final long MIN_INTERVAL = 10 * 60 * 1000; // 1 minute in ms
+//    private static final long MIN_INTERVAL = 10 * 1000;
 
     private PlayingContext context;
     private LocationManager manager;

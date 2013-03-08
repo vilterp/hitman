@@ -3,6 +3,7 @@ package com.hitman.client.model;
 import android.content.Context;
 import com.google.common.base.Function;
 import com.hitman.client.Util;
+import com.hitman.client.event.GameEvent;
 import com.hitman.client.http.*;
 import org.apache.http.Header;
 import org.apache.http.message.BasicHeader;
@@ -66,7 +67,7 @@ public class LoggedInContext extends HitmanContext {
                         loc,
                         startDate,
                         players,
-                        null,
+                        new ArrayList<GameEvent>(),
                         true
                     );
                     return new Right<JSONException, Game>(game);

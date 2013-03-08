@@ -1,8 +1,10 @@
-package com.hitman.client.model;
+package com.hitman.client.event;
 
 import org.joda.time.DateTime;
 
-public abstract class GameEvent {
+import java.io.Serializable;
+
+public abstract class GameEvent implements Serializable {
 
     private DateTime dateTime;
 
