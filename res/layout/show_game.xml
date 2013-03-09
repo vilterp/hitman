@@ -78,6 +78,6 @@
             android:visibility="gone"/>
     <ListView android:layout_height="fill_parent"
               android:layout_width="fill_parent"
-              android:id="@+id/show_game_events_list"/>
+              android:id="@+id/show_game_events_list" android:visibility="visible"/>
 
 </LinearLayout>

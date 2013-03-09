@@ -19,6 +19,7 @@ import android.widget.TextView;
 import com.hitman.client.GCMIntentService;
 import com.hitman.client.R;
 import com.hitman.client.event.GameEvent;
+import com.hitman.client.event.GameStartedEvent;
 import com.hitman.client.model.*;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
@@ -96,6 +97,10 @@ public class ShowGame extends Activity {
             @Override
             public void onReceive(Context context, Intent intent) {
                 reloadGameFromStorage();
+                GameEvent evt = (GameEvent) intent.getSerializableExtra("event");
+                if(evt instanceof GameStartedEvent) {
+                    enterRunningState();
+                }
             }
         };
         this.registerReceiver(receiver, new IntentFilter(GCMIntentService.GAME_EVENT_ACTION));
@@ -136,6 +141,7 @@ public class ShowGame extends Activity {
             Map<String, String> row = new HashMap<String, String>();
             row.put("description", event.getHumanReadableDescr());
             row.put("time", event.getDateTime().toString(DateTimeFormat.shortDateTime()));
+            data.add(row);
         }
         gameEventsList.setAdapter(
                 new SimpleAdapter(this, data, R.layout.game_events_list_item, from, to));
@@ -168,9 +174,12 @@ public class ShowGame extends Activity {
     private void setBasicInfo() {
         Game game = context.getGameStorage().getGame();
         gameNameInd.setText(game.getName());
-        playersLeftInd.setText(Integer.toString(game.getPlayers().size()));
-        if(state == State.RUNNING) {
-            targetInd.setText(context.getSessionStorage().getCurrentTarget());
+        // +1 to account for current player
+        playersLeftInd.setText(Integer.toString(game.getPlayers().size() + 1));
+        String target = context.getSessionStorage().getCurrentTarget();
+        if(target != null) {
+            enterRunningState();
+            targetInd.setText(target);
         }
     }
 

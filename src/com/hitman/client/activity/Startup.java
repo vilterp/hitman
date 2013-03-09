@@ -30,11 +30,6 @@ public class Startup extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.waiting);
         loggedOutContext = new LoggedOutContext(this);
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
         getGcmIdAndContinue();
     }
 

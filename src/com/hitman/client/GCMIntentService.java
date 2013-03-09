@@ -44,6 +44,8 @@ public class GCMIntentService extends GCMBaseIntentService {
         GameEvent evt = null;
         if (type.equals("location_stationary")) {
             evt = new StationaryLocationEvent(DateTime.now(), intent.getStringExtra("location"));
+        } else if(type.equals("player_join")) {
+            evt = new JoinEvent(DateTime.now(), intent.getStringExtra("name"));
         } else if (type.equals("game_start")) {
             evt = new GameStartedEvent(DateTime.now(), intent.getStringExtra("target"));
         } else if(type.equals("location_moving")) {
@@ -92,18 +94,18 @@ public class GCMIntentService extends GCMBaseIntentService {
             }
             // update model, send broadcast
             final PlayingContext finalContext = context;
-            new AsyncTask<GameEvent, Void, Void>() {
+            new AsyncTask<GameEvent, Void, GameEvent>() {
                 @Override
-                protected Void doInBackground(GameEvent... params) {
+                protected GameEvent doInBackground(GameEvent... params) {
                     assert params.length == 1;
                     finalContext.getGameStorage().addEvent(params[0]);
-                    return null;
+                    return params[0];
                 }
                 @Override
-                protected void onPostExecute(Void bla) {
+                protected void onPostExecute(GameEvent evt) {
                     // send broadcast to update view
-                    Intent evtBroadcast = new Intent();
-                    evtBroadcast.setAction(GAME_EVENT_ACTION);
+                    Intent evtBroadcast = new Intent(GAME_EVENT_ACTION);
+                    evtBroadcast.putExtra("event", evt);
                     sendBroadcast(evtBroadcast);
                 }
             }.execute(evt);
@@ -117,7 +119,8 @@ public class GCMIntentService extends GCMBaseIntentService {
         // TODO: check whether activity is running or not
         Notification.Builder mBuilder = new Notification.Builder(this)
                                                     .setContentTitle(title)
-                                                    .setContentText(body);
+                                                    .setContentText(body)
+                                                    .setSmallIcon(R.drawable.ic_launcher);
         // Creates an explicit intent for an Activity in your app
         Intent resultIntent = new Intent(this, ShowGame.class);
 

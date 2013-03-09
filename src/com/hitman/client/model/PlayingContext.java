@@ -54,7 +54,7 @@ public class PlayingContext extends LoggedInContext {
         Map<String,String> params = new HashMap<String,String>();
         params.put("location", String.format("%f,%f", loc.getLatitude(), loc.getLongitude()));
         return Util.collapse(
-                 execRequest(String.format("/games/%d/sensors/location/update", gameStorage.getGame().getId()),
+                 execRequest("/games/sensors/location/create",
                              params, HTTPMethod.POST, CONTENT_TYPE_ANY)
                .bindRight(expectCodes(201)));
     }
@@ -63,6 +63,7 @@ public class PlayingContext extends LoggedInContext {
         checkClosed();
         closed = true;
         gameStorage.clear();
+        getSessionStorage().clearTarget();
     }
 
     private void checkClosed() {
