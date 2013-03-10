@@ -17,6 +17,7 @@ import com.hitman.client.http.Left;
 import com.hitman.client.http.WrongSideException;
 import com.hitman.client.model.*;
 import com.hitman.client.service.LocationService;
+import org.joda.time.DateTimeZone;
 import org.joda.time.format.DateTimeFormat;
 
 import java.util.*;
@@ -182,7 +183,8 @@ public class GameList extends Activity implements JoinGameDialogFragment.JoinGam
             row.put("location", String.format("%f, %f",
                     game.getLocation().getLat(), game.getLocation().getLng()));
             row.put("numPlayers", String.format("%d players", game.getPlayers().size()));
-            row.put("startDate", game.getStartDateTime().toString(DateTimeFormat.shortDateTime()));
+            row.put("startDate", game.getStartDateTime().withZone(DateTimeZone.getDefault())
+                    .toString(DateTimeFormat.shortDateTime()));
             data.add(row);
             gameIndicies.put(ind, game);
             ind++;

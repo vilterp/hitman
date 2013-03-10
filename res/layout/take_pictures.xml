@@ -25,4 +25,14 @@
                 android:text="I'm Done"
                 android:id="@+id/take_pictures_done"/>
     </LinearLayout>
+    <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0/x uploaded"
+            android:id="@+id/taking_pictures_progress_ind"
+            android:visibility="gone"/>
+    <GridLayout
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent" android:id="@+id/taking_pictures_grid_view">
+    </GridLayout>
 </LinearLayout>

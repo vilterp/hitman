@@ -10,9 +10,9 @@ import android.os.AsyncTask;
 import android.util.Log;
 import android.widget.Toast;
 import com.google.android.gcm.GCMBaseIntentService;
-import com.google.common.base.Function;
 import com.hitman.client.activity.ShowGame;
 import com.hitman.client.activity.Startup;
+import com.hitman.client.activity.TakePictures;
 import com.hitman.client.event.*;
 import com.hitman.client.http.Either;
 import com.hitman.client.http.Left;
@@ -20,8 +20,6 @@ import com.hitman.client.http.Right;
 import com.hitman.client.http.WrongSideException;
 import com.hitman.client.model.*;
 import org.joda.time.DateTime;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 public class GCMIntentService extends GCMBaseIntentService {
 
@@ -34,6 +32,7 @@ public class GCMIntentService extends GCMBaseIntentService {
     private static final int TARGET_REASSIGNED_MSGID = 3;
     private static final int GAME_STARTED_MSGID = 4;
     private static final int JOIN_MSGID = 5;
+    private static final int TAKE_PHTOS_MSGID = 6;
 
     public GCMIntentService() {
         super(Startup.SENDER_ID);
@@ -54,6 +53,8 @@ public class GCMIntentService extends GCMBaseIntentService {
             evt = new TargetAssignedEvent(DateTime.now(), intent.getStringExtra("target"));
         } else if(type.equals("killed")) {
             evt = new KilledEvent(DateTime.now());
+        } else if(type.equals("take_photo")) {
+            evt = new TakePhotoEvent(DateTime.now(), intent.getIntExtra("photoset", -1));
         } else {
             return new Left<Exception, GameEvent>(new Exception("unrecognized event type " + type));
         }
@@ -76,21 +77,30 @@ public class GCMIntentService extends GCMBaseIntentService {
         Either<Exception, GameEvent> parseRes = parseMessage(intent);
         try {
             GameEvent evt = parseRes.getRight();
+            Intent showGameIntent = new Intent(this, ShowGame.class);
             if(evt instanceof StationaryLocationEvent) {
-                showNotification("Target Update", evt.getHumanReadableDescr(), LOCATION_STATIONARY_MSGID);
+                showNotification("Target Update", evt.getHumanReadableDescr(), LOCATION_STATIONARY_MSGID, showGameIntent);
             } else if(evt instanceof MovingLocationEvent) {
-                showNotification("Target Update", evt.getHumanReadableDescr(), LOCATION_MOVING_MSGID);
+                showNotification("Target Update", evt.getHumanReadableDescr(), LOCATION_MOVING_MSGID, showGameIntent);
             } else if(evt instanceof TargetAssignedEvent) {
                 if(evt instanceof GameStartedEvent) {
-                    showNotification("Game Started!", evt.getHumanReadableDescr(), GAME_STARTED_MSGID);
+                    showNotification("Game Started!", evt.getHumanReadableDescr(), GAME_STARTED_MSGID, showGameIntent);
                 } else {
-                    showNotification("Target Assigned", evt.getHumanReadableDescr(), TARGET_REASSIGNED_MSGID);
+                    showNotification("Target Assigned", evt.getHumanReadableDescr(), TARGET_REASSIGNED_MSGID, showGameIntent);
                 }
                 context.getSessionStorage().setCurrentTarget(((TargetAssignedEvent)evt).getNewTarget());
             } else if(evt instanceof JoinEvent) {
-                showNotification("New Player Joined", evt.getHumanReadableDescr(), JOIN_MSGID);
+                showNotification("New Player Joined", evt.getHumanReadableDescr(), JOIN_MSGID, showGameIntent);
             } else if(evt instanceof KilledEvent) {
                 Log.i(TAG, "you were killed");
+            } else if(evt instanceof TakePhotoEvent) {
+                Intent takePhotos = new Intent(this, TakePictures.class);
+                takePhotos.putExtra("photoset_id", ((TakePhotoEvent) evt).getPhotoSetId());
+                String msg = "Someone else's target is nearby!" +
+                            " Discreetly take photos of people near you;" +
+                            " they'll be sent to that person's assassin" +
+                            " and will help them figure out who their target is.";
+                showNotification("Take Photos!", msg, TAKE_PHTOS_MSGID, takePhotos);
             }
             // update model, send broadcast
             final PlayingContext finalContext = context;
@@ -115,15 +125,12 @@ public class GCMIntentService extends GCMBaseIntentService {
         }
     }
 
-    private void showNotification(String title, String body, int id) {
+    private void showNotification(String title, String body, int id, Intent resultIntent) {
         // TODO: check whether activity is running or not
         Notification.Builder mBuilder = new Notification.Builder(this)
                                                     .setContentTitle(title)
                                                     .setContentText(body)
                                                     .setSmallIcon(R.drawable.ic_launcher);
-        // Creates an explicit intent for an Activity in your app
-        Intent resultIntent = new Intent(this, ShowGame.class);
-
         // The stack builder object will contain an artificial back stack for the
         // started Activity.
         // This ensures that navigating backward from the Activity leads out of

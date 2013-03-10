@@ -3,11 +3,11 @@ package com.hitman.client.http;
 import android.util.Log;
 import com.google.common.base.Function;
 import com.hitman.client.Util;
-import org.apache.http.Header;
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
+import org.apache.http.*;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.*;
+import org.apache.http.entity.mime.FormBodyPart;
+import org.apache.http.entity.mime.MultipartEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONArray;
@@ -64,30 +64,28 @@ public abstract class AuthContext {
     public Either<Object,JSONObject> getJsonObjectExpectCodes(String path, Map<String,String> params,
                                                               HTTPMethod method, int... codes) {
         return Util.collapse(
-                 Util.collapse(
-                   Util.collapse(
-                     execRequest(path, params, method, CONTENT_TYPE_JSON)
-                   .bindRight(expectCodes(codes)))
-                 .bindRight(getBody))
-               .bindRight(Util.parseJsonObject));
+                Util.collapse(
+                        Util.collapse(
+                                execNormalRequest(path, params, method, CONTENT_TYPE_JSON)
+                                        .bindRight(expectCodes(codes)))
+                                .bindRight(getBody))
+                        .bindRight(Util.parseJsonObject));
     }
 
     public Either<Object,JSONArray> getJsonArrayExpectCodes(String path, Map<String,String> params,
                                                              HTTPMethod method, int... codes) {
         return Util.collapse(
-                 Util.collapse(
-                   Util.collapse(
-                     execRequest(path, params, method, CONTENT_TYPE_JSON)
-                   .bindRight(expectCodes(codes)))
-                 .bindRight(getBody))
-               .bindRight(Util.parseJsonArray));
+                Util.collapse(
+                        Util.collapse(
+                                execNormalRequest(path, params, method, CONTENT_TYPE_JSON)
+                                        .bindRight(expectCodes(codes)))
+                                .bindRight(getBody))
+                        .bindRight(Util.parseJsonArray));
     }
 
-    public Either<IOException,HttpResponse> execRequest(String path, Map<String, String> params,
-                                                         HTTPMethod method, String acceptType) {
-        assert path.charAt(0) == '/';
-        DefaultHttpClient httpClient = new DefaultHttpClient();
-        String url = String.format("http://%s:%d%s/", getDomain(), getPort(), path);
+    public Either<IOException,HttpResponse> execNormalRequest(String path, Map<String, String> params,
+                                                              HTTPMethod method, String acceptType) {
+        String url = getUriForPath(path);
         if(params == null) {
             params = new HashMap<String, String>();
         }
@@ -105,6 +103,8 @@ public abstract class AuthContext {
             } else {
                 postOrPut = new HttpPost(url);
             }
+            MultipartEntity entity = new MultipartEntity();
+
             List<NameValuePair> args = new ArrayList<NameValuePair>();
             for (Map.Entry<String, String> param : params.entrySet()) {
                 args.add(new BasicNameValuePair(param.getKey(), param.getValue()));
@@ -117,6 +117,36 @@ public abstract class AuthContext {
             httpReq = postOrPut;
         }
 
+        return execRequest(httpReq, acceptType);
+    }
+
+    private String getUriForPath(String path) {
+        assert path.charAt(0) == '/';
+        return String.format("http://%s:%d%s/", getDomain(), getPort(), path);
+    }
+
+    public Either<IOException, HttpResponse> execUploadRequest(String path, List<FormBodyPart> parts,
+                                                               HTTPMethod method, String acceptType) {
+        HttpEntityEnclosingRequestBase httpReq = null;
+        String url = getUriForPath(path);
+        if(method.equals(HTTPMethod.POST)) {
+            httpReq = new HttpPost(url);
+        } else if(method.equals(HTTPMethod.PUT)) {
+            httpReq = new HttpPut(url);
+        } else {
+            throw new IllegalArgumentException("gotta be this or that: post or put");
+        }
+        MultipartEntity entity = new MultipartEntity();
+        for (FormBodyPart part : parts) {
+            entity.addPart(part);
+        }
+        httpReq.setEntity(entity);
+
+        return execRequest(httpReq, acceptType);
+    }
+
+    public Either<IOException, HttpResponse> execRequest(HttpUriRequest httpReq, String acceptType) {
+        DefaultHttpClient httpClient = new DefaultHttpClient();
         httpReq.setHeader("accept", acceptType);
         for (Header header : getHeaders()) {
             httpReq.setHeader(header);
@@ -124,10 +154,14 @@ public abstract class AuthContext {
 
         try {
             HttpResponse resp = httpClient.execute(httpReq);
-            Log.i(TAG, String.format("%s %s %s => %d", method, path, params, resp.getStatusLine().getStatusCode()));
+            Log.i(TAG, String.format("%s %s %s => %d",
+                    httpReq.getRequestLine().getMethod(), httpReq.getRequestLine().getUri(),
+                    httpReq.getParams(), resp.getStatusLine().getStatusCode()));
             return new Right<IOException, HttpResponse>(resp);
         } catch (IOException e) {
             return new Left<IOException, HttpResponse>(e);
+        } finally {
+            httpClient.getConnectionManager().shutdown();
         }
     }
 

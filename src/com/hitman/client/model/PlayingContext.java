@@ -1,18 +1,25 @@
 package com.hitman.client.model;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.location.Location;
 import com.hitman.client.Util;
 import com.hitman.client.http.Either;
 import com.hitman.client.http.HTTPMethod;
 import org.apache.http.HttpResponse;
+import org.apache.http.entity.mime.FormBodyPart;
+import org.apache.http.entity.mime.content.FileBody;
+import org.apache.http.entity.mime.content.StringBody;
 
-import java.io.Serializable;
+import java.io.*;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class PlayingContext extends LoggedInContext {
 
+    private static final String PHOTO_TEMP_FILE = "photo.tmp.png";
     private GameStorage gameStorage;
     private boolean closed;
 
@@ -54,8 +61,8 @@ public class PlayingContext extends LoggedInContext {
         Map<String,String> params = new HashMap<String,String>();
         params.put("location", String.format("%f,%f", loc.getLatitude(), loc.getLongitude()));
         return Util.collapse(
-                 execRequest("/games/sensors/location/create",
-                             params, HTTPMethod.POST, CONTENT_TYPE_ANY)
+                 execNormalRequest("/games/sensors/location/create",
+                         params, HTTPMethod.POST, CONTENT_TYPE_ANY)
                .bindRight(expectCodes(201)));
     }
 
@@ -70,6 +77,41 @@ public class PlayingContext extends LoggedInContext {
         if(closed) {
             throw new IllegalStateException("context is closed");
         }
+    }
+
+    /**
+     * caution -- blocking
+     * @param image
+     * @param photosetId
+     * @return resp
+     */
+    public Either<Object,HttpResponse> uploadImage(Bitmap image, int photosetId) {
+        File file = new File(getAndroidContext().getFilesDir(), PHOTO_TEMP_FILE);
+        FileOutputStream out = null;
+        try {
+            out = new FileOutputStream(file);
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+        image.compress(Bitmap.CompressFormat.PNG, 100, out);
+        try {
+            out.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        List<FormBodyPart> formBodyParts = new ArrayList<FormBodyPart>();
+        try {
+            formBodyParts.add(new FormBodyPart("photoset", new StringBody(Integer.toString(photosetId))));
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
+        formBodyParts.add(new FormBodyPart("photo", new FileBody(file)));
+        Either<Object,HttpResponse> resp =
+                Util.collapse(
+                  execUploadRequest("/games/sensors/camera/upload", formBodyParts, HTTPMethod.POST, CONTENT_TYPE_ANY)
+                .bindRight(expectCodes(201)));
+        getAndroidContext().deleteFile(PHOTO_TEMP_FILE);
+        return resp;
     }
 
 }
