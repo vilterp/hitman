@@ -11,18 +11,20 @@ public class Game implements Serializable {
 
     private int id;
     private String name;
+    private String killCode;
     private LatLng location;
     private DateTime startDate;
     private Set<Player> players;
     private List<GameEvent> events;
 
-    public Game(int id, String name, LatLng location,
+    public Game(int id, String name, String killCode, LatLng location,
                 DateTime startDate, Set<Player> players,
                 List<GameEvent> events,
                 boolean saved) {
         assert id >= 0;
         this.id = id;
         this.name = name;
+        this.killCode = killCode;
         this.location = location;
         this.players = players;
         this.startDate = startDate;

@@ -38,8 +38,14 @@ public abstract class AuthContext {
             public Either<IOException, String> apply(HttpResponse response) {
                 BufferedReader reader = null;
                 try {
+                    StringBuilder builder = new StringBuilder();
                     reader = new BufferedReader(new InputStreamReader(response.getEntity().getContent(), "UTF-8"));
-                    return new Right<IOException, String>(reader.readLine());
+                    while(true) {
+                        String read = reader.readLine();
+                        if(read == null) break;
+                        builder.append(read);
+                    }
+                    return new Right<IOException, String>(builder.toString());
                 } catch (IOException e) {
                     return new Left<IOException, String>(e);
                 }
@@ -64,12 +70,12 @@ public abstract class AuthContext {
     public Either<Object,JSONObject> getJsonObjectExpectCodes(String path, Map<String,String> params,
                                                               HTTPMethod method, int... codes) {
         return Util.collapse(
-                Util.collapse(
-                        Util.collapse(
-                                execNormalRequest(path, params, method, CONTENT_TYPE_JSON)
-                                        .bindRight(expectCodes(codes)))
-                                .bindRight(getBody))
-                        .bindRight(Util.parseJsonObject));
+                 Util.collapse(
+                   Util.collapse(
+                     execNormalRequest(path, params, method, CONTENT_TYPE_JSON)
+                   .bindRight(expectCodes(codes)))
+                 .bindRight(getBody))
+               .bindRight(Util.parseJsonObject));
     }
 
     public Either<Object,JSONArray> getJsonArrayExpectCodes(String path, Map<String,String> params,
@@ -160,8 +166,6 @@ public abstract class AuthContext {
             return new Right<IOException, HttpResponse>(resp);
         } catch (IOException e) {
             return new Left<IOException, HttpResponse>(e);
-        } finally {
-            httpClient.getConnectionManager().shutdown();
         }
     }
 

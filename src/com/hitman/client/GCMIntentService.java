@@ -54,7 +54,7 @@ public class GCMIntentService extends GCMBaseIntentService {
         } else if(type.equals("killed")) {
             evt = new KilledEvent(DateTime.now());
         } else if(type.equals("take_photo")) {
-            evt = new TakePhotoEvent(DateTime.now(), intent.getIntExtra("photoset", -1));
+            evt = new TakePhotoEvent(DateTime.now(), Integer.parseInt(intent.getStringExtra("photoset")));
         } else {
             return new Left<Exception, GameEvent>(new Exception("unrecognized event type " + type));
         }

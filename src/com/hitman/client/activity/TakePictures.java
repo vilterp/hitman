@@ -40,7 +40,7 @@ public class TakePictures extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.take_pictures);
         // get context
-        photoSetId = getIntent().getIntExtra("photoSetId", -1);
+        photoSetId = getIntent().getIntExtra("photoset_id", -1);
         try {
             playingContext = PlayingContext.readFromStorage(LoggedInContext.readFromStorage(new LoggedOutContext(this)));
         } catch (StorageException e) {
@@ -60,6 +60,7 @@ public class TakePictures extends Activity {
         imDone.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 imDone.setEnabled(false);
+                progressInd.setVisibility(View.VISIBLE);
                 // wish I didn't have to write this...
                 List<Bitmap> bitmaps = new ArrayList<Bitmap>();
                 for (int i = 0; i < photos.getCount(); i++) {

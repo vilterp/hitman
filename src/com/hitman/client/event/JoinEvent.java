@@ -13,7 +13,7 @@ public class JoinEvent extends GameEvent {
 
     @Override
     public String getHumanReadableDescr() {
-        return String.format("User %s joined.", user);
+        return String.format("User \"%s\" joined.", user);
     }
 
     public String getUser() {

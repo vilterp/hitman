@@ -14,7 +14,7 @@ public class TargetAssignedEvent extends GameEvent {
 
     @Override
     public String getHumanReadableDescr() {
-        return String.format("You were assigned %s as a target", newTarget);
+        return String.format("You were assigned \"%s\" as a target", newTarget);
     }
 
     public String getNewTarget() {

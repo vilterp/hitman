@@ -34,7 +34,8 @@ public class GameStorage {
                 .registerSubtype(TargetAssignedEvent.class)
                 .registerSubtype(GameStartedEvent.class)
                 .registerSubtype(StationaryLocationEvent.class)
-                .registerSubtype(MovingLocationEvent.class);
+                .registerSubtype(MovingLocationEvent.class)
+                .registerSubtype(TakePhotoEvent.class);
         gson = new GsonBuilder()
                 .registerTypeAdapter(DateTime.class, new DateTimeTypeConverter())
                 .registerTypeAdapterFactory(factory)

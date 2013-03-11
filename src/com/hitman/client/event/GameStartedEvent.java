@@ -10,7 +10,7 @@ public class GameStartedEvent extends TargetAssignedEvent {
 
     @Override
     public String getHumanReadableDescr() {
-        return String.format("Game Started! Your initial target is %s", getNewTarget());
+        return String.format("Game Started! Your initial target is \"%s\"", getNewTarget());
     }
 
 }

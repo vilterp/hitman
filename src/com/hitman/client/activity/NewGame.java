@@ -57,7 +57,7 @@ public class NewGame extends Activity {
                 DateTime dateTime = new DateTime(startDate.getYear(), startDate.getMonth() + 1,
                         startDate.getDayOfMonth(), startTime.getCurrentHour(),
                         startTime.getCurrentMinute(), 0);
-                Game game = new Game(-1, gameName.getText().toString(),
+                Game game = new Game(-1, gameName.getText().toString(), null,
                                      location, dateTime, new HashSet<Player>(), null, false);
                 submitButton.setEnabled(false);
                 final Toast toast = Toast.makeText(NewGame.this, "Creating game....", Toast.LENGTH_LONG);

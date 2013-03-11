@@ -64,6 +64,7 @@ public class LoggedInContext extends HitmanContext {
                     Game game = new Game(
                         obj.getInt("id"),
                         obj.getString("name"),
+                        obj.getString("kill_code"),
                         loc,
                         startDate,
                         players,

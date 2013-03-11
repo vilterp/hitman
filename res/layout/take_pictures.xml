@@ -31,8 +31,8 @@
             android:text="0/x uploaded"
             android:id="@+id/taking_pictures_progress_ind"
             android:visibility="gone"/>
-    <GridLayout
+    <GridView
             android:layout_width="fill_parent"
             android:layout_height="fill_parent" android:id="@+id/taking_pictures_grid_view">
-    </GridLayout>
+    </GridView>
 </LinearLayout>
