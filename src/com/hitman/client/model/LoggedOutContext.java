@@ -27,7 +27,7 @@ public class LoggedOutContext extends HitmanContext {
         params.put("user", credentials.getUsername());
         params.put("password", credentials.getPassword());
         params.put("gcm_regid", credentials.getGcmId());
-        return getJsonObjectExpectCodes("/users/signup", params, HTTPMethod.POST, 200)
+        return getJsonObjectExpectCodes("/users/signup/", params, HTTPMethod.POST, 200)
                 .bindRight(new Function<JSONObject, LoggedInContext>() {
                     public LoggedInContext apply(JSONObject jsonObject) {
                         getSessionStorage().saveLoginCredentials(credentials);
@@ -41,7 +41,7 @@ public class LoggedOutContext extends HitmanContext {
         params.put("gcm_regid", credentials.getGcmId());
         params.put("username", credentials.getUsername());
         params.put("password", credentials.getPassword());
-        return getJsonObjectExpectCodes("/users/login", params, HTTPMethod.POST, 200)
+        return getJsonObjectExpectCodes("/users/login/", params, HTTPMethod.POST, 200)
                 .bindRight(new Function<JSONObject, LoggedInContext>() {
                     public LoggedInContext apply(JSONObject jsonObject) {
                         getSessionStorage().saveLoginCredentials(credentials);

@@ -3,7 +3,6 @@ package com.hitman.client;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.app.TaskStackBuilder;
 import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
@@ -19,8 +18,6 @@ import com.hitman.client.http.WrongSideException;
 import com.hitman.client.model.*;
 import org.joda.time.DateTime;
 
-import java.net.URI;
-
 public class GCMIntentService extends GCMBaseIntentService {
 
     public static final String TAG = "HITMAN-GCMIntentService";
@@ -35,6 +32,7 @@ public class GCMIntentService extends GCMBaseIntentService {
     private static final int TAKE_PHTOS_MSGID = 6;
     private static final int PHOTO_RECEIVED_MSGID = 7;
     private static final int KILLED_MSGID = 8;
+    private static final int YOU_WON_MSGID = 9;
 
     public GCMIntentService() {
         super(Startup.SENDER_ID);
@@ -59,6 +57,8 @@ public class GCMIntentService extends GCMBaseIntentService {
             evt = new TakePhotoEvent(DateTime.now(), Integer.parseInt(intent.getStringExtra("photoset")));
         } else if(type.equals("photo_received")) {
             evt = new PhotoReceivedEvent(DateTime.now(), intent.getStringExtra("url"));
+        } else if(type.equals("game_end")) {
+            evt = new GameWonEvent(DateTime.now());
         } else {
             return new Left<Exception, GameEvent>(new Exception("unrecognized event type " + type));
         }
@@ -102,7 +102,7 @@ public class GCMIntentService extends GCMBaseIntentService {
                 showNotification("You Were Killed!", "Better luck next time.", KILLED_MSGID, gameListIntent);
                 context.leaveGame();
             } else if(evt instanceof TakePhotoEvent) {
-                Intent takePhotos = new Intent(this, TakePictures.class);
+                Intent takePhotos = new Intent(this, TakePhotos.class);
                 takePhotos.putExtra("photoset_id", ((TakePhotoEvent) evt).getPhotoSetId());
                 String msg = "Someone else's target is nearby!" +
                             " Discreetly take photos of people near you;" +
@@ -114,57 +114,52 @@ public class GCMIntentService extends GCMBaseIntentService {
                 viewPhoto.putExtra("photo_event", evt);
                 String msg = "Photo of your target received! Click to view.";
                 showNotification("Photo Received", msg, PHOTO_RECEIVED_MSGID, viewPhoto);
+            } else if(evt instanceof GameWonEvent) {
+                showNotification("You Won!", "Congratulations.", YOU_WON_MSGID, new Intent(this, GameList.class));
             }
             // update model, send broadcast
-            final PlayingContext finalContext = context;
-            new AsyncTask<GameEvent, Void, GameEvent>() {
-                @Override
-                protected GameEvent doInBackground(GameEvent... params) {
-                    assert params.length == 1;
-                    finalContext.getGameStorage().addEvent(params[0]);
-                    return params[0];
-                }
-                @Override
-                protected void onPostExecute(GameEvent evt) {
-                    // send broadcast to update view
-                    Intent evtBroadcast = new Intent(GAME_EVENT_ACTION);
-                    evtBroadcast.putExtra("event", evt);
-                    sendBroadcast(evtBroadcast);
-                }
-            }.execute(evt);
+            if(context.getGameStorage().isActive()) {
+                final PlayingContext finalContext = context;
+                new AsyncTask<GameEvent, Void, GameEvent>() {
+                    @Override
+                    protected GameEvent doInBackground(GameEvent... params) {
+                        assert params.length == 1;
+                        finalContext.getGameStorage().addEvent(params[0]);
+                        return params[0];
+                    }
+                    @Override
+                    protected void onPostExecute(GameEvent evt) {
+                        // send broadcast to update view
+                        sendEventBroadcast(evt);
+                    }
+                }.execute(evt);
+            } else {
+                sendEventBroadcast(evt);
+            }
         } catch (WrongSideException e) {
             Log.e(TAG, e.toString());
             Toast.makeText(this, "An error occurred while receiving a GCM message.", Toast.LENGTH_LONG).show();
         }
     }
 
+    private void sendEventBroadcast(GameEvent evt) {
+        Intent evtBroadcast = new Intent(GAME_EVENT_ACTION);
+        evtBroadcast.putExtra("event", evt);
+        sendBroadcast(evtBroadcast);
+    }
+
     private void showNotification(String title, String body, int id, Intent resultIntent) {
-        // TODO: check whether activity is running or not
-        Notification.Builder mBuilder = new Notification.Builder(this)
+        PendingIntent contentIntent = PendingIntent.getActivity(this, 0, resultIntent, 0);
+        Notification.Builder builder = new Notification.Builder(this)
                                                     .setContentTitle(title)
                                                     .setContentText(body)
                                                     .setSmallIcon(R.drawable.ic_launcher)
-                                                    .setAutoCancel(true);
-        // The stack builder object will contain an artificial back stack for the
-        // started Activity.
-        // This ensures that navigating backward from the Activity leads out of
-        // your application to the Home screen.
-        TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
-        // Adds the back stack for the Intent (but not the Intent itself)
-        stackBuilder.addParentStack(ShowGame.class);
-        // Adds the Intent that starts the Activity to the top of the stack
-        stackBuilder.addNextIntent(resultIntent);
-        stackBuilder.addNextIntent(new Intent(this, GameList.class));
-        PendingIntent resultPendingIntent =
-                stackBuilder.getPendingIntent(
-                    0,
-                    PendingIntent.FLAG_UPDATE_CURRENT
-                );
-        mBuilder.setContentIntent(resultPendingIntent);
-        NotificationManager mNotificationManager =
+                                                    .setAutoCancel(true)
+                                                    .setContentIntent(contentIntent);
+        NotificationManager notificationManager =
             (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         // mId allows you to update the notification later on.
-        mNotificationManager.notify(id, mBuilder.build());
+        notificationManager.notify(id, builder.build());
     }
 
     @Override

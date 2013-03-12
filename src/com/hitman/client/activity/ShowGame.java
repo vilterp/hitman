@@ -18,6 +18,7 @@ import com.hitman.client.GCMIntentService;
 import com.hitman.client.R;
 import com.hitman.client.event.GameEvent;
 import com.hitman.client.event.GameStartedEvent;
+import com.hitman.client.event.GameWonEvent;
 import com.hitman.client.model.*;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
@@ -101,6 +102,8 @@ public class ShowGame extends Activity {
                 GameEvent evt = (GameEvent) intent.getSerializableExtra("event");
                 if(evt instanceof GameStartedEvent) {
                     enterRunningState();
+                } else if(evt instanceof GameWonEvent) {
+                    finish();
                 }
             }
         };
