@@ -32,12 +32,14 @@
                   android:layout_height="wrap_content"
                   android:layout_width="wrap_content"
                   android:text="Player1, Player2, Player3 ...."
+                  android:gravity="right"
                   style="@android:style/TextAppearance.DeviceDefault.SearchResult.Subtitle"
                   android:layout_gravity="left"/>
         <TextView android:id="@+id/game_list_item_location"
                   android:layout_height="wrap_content"
                   android:layout_width="wrap_content"
                   android:text="lat,long"
+                  android:gravity="right"
                   android:layout_gravity="right"
                   style="@android:style/TextAppearance.DeviceDefault.SearchResult.Subtitle"/>
     </LinearLayout>
