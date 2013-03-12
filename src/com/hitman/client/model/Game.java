@@ -68,4 +68,12 @@ public class Game implements Serializable {
         this.startDate = startDate;
     }
 
+    public String getKillCode() {
+        return killCode;
+    }
+
+    public void setKillCode(String killCode) {
+        this.killCode = killCode;
+    }
+
 }

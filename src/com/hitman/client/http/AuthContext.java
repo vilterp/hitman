@@ -1,5 +1,7 @@
 package com.hitman.client.http;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.util.Log;
 import com.google.common.base.Function;
 import com.hitman.client.Util;
@@ -13,10 +15,7 @@ import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -87,6 +86,32 @@ public abstract class AuthContext {
                                         .bindRight(expectCodes(codes)))
                                 .bindRight(getBody))
                         .bindRight(Util.parseJsonArray));
+    }
+
+    public static Function<HttpResponse,Either<IOException,InputStream>> getResultInputStream =
+            new Function<HttpResponse, Either<IOException, InputStream>>() {
+                public Either<IOException, InputStream> apply(HttpResponse resp) {
+                    try {
+                        return new Right<IOException, InputStream>(resp.getEntity().getContent());
+                    } catch (IOException e) {
+                        return new Left<IOException, InputStream>(e);
+                    }
+                }
+            };
+
+    public static Function<InputStream,Bitmap> decodeBitmap = new Function<InputStream, Bitmap>() {
+        public Bitmap apply(InputStream inputStream) {
+            return BitmapFactory.decodeStream(inputStream);
+        }
+    };
+
+    public Either<Object,Bitmap> getBitmap(String path) {
+        return Util.collapse(
+                 Util.collapse(
+                   execNormalRequest(path, null, HTTPMethod.GET, CONTENT_TYPE_ANY)
+                 .bindRight(expectCodes(200)))
+               .bindRight(getResultInputStream))
+               .bindRight(decodeBitmap);
     }
 
     public Either<IOException,HttpResponse> execNormalRequest(String path, Map<String, String> params,

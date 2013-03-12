@@ -12,10 +12,8 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.LinearLayout;
-import android.widget.ListView;
-import android.widget.SimpleAdapter;
-import android.widget.TextView;
+import android.widget.*;
+import com.google.common.collect.Ordering;
 import com.hitman.client.GCMIntentService;
 import com.hitman.client.R;
 import com.hitman.client.event.GameEvent;
@@ -27,10 +25,7 @@ import org.joda.time.Interval;
 import org.joda.time.Period;
 import org.joda.time.format.DateTimeFormat;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class ShowGame extends Activity {
 
@@ -49,6 +44,9 @@ public class ShowGame extends Activity {
     private TextView playersLeftLabel;
     private TextView playersLeftInd;
     private TextView targetInd;
+
+    private Button killedTargetButton;
+    private Button beenKilledButton;
 
     private ListView gameEventsList;
 
@@ -83,6 +81,9 @@ public class ShowGame extends Activity {
         // running
         gameRunningInfoContainer = (LinearLayout) findViewById(R.id.show_game_running_info_container);
         targetInd = (TextView) findViewById(R.id.show_game_target_ind);
+        // buttons
+        killedTargetButton = (Button) findViewById(R.id.show_game_killed_target_button);
+        beenKilledButton = (Button) findViewById(R.id.show_game_been_killed_button);
         // events list
         gameEventsList = (ListView) findViewById(R.id.show_game_events_list);
         // set up initial state
@@ -104,6 +105,20 @@ public class ShowGame extends Activity {
             }
         };
         this.registerReceiver(receiver, new IntentFilter(GCMIntentService.GAME_EVENT_ACTION));
+        // button listeners
+        killedTargetButton.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                Intent startEnterKillCode = new Intent(ShowGame.this, EnterKillCode.class);
+                startActivity(startEnterKillCode);
+            }
+        });
+        beenKilledButton.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                Intent startShowKillCode = new Intent(ShowGame.this, ShowKillCode.class);
+                startShowKillCode.putExtra("kill_code", context.getGameStorage().getGame().getKillCode());
+                startActivity(startShowKillCode);
+            }
+        });
     }
 
     @Override
@@ -137,7 +152,13 @@ public class ShowGame extends Activity {
         String[] from = {"description", "time"};
         int[] to = {R.id.game_events_list_item_description, R.id.game_events_list_item_datetime};
         List<Map<String, String>> data = new ArrayList<Map<String, String>>();
-        for (GameEvent event: context.getGameStorage().getGame().getEvents()) {
+        // sort reverse-chron
+        List<GameEvent> games = Ordering.from(new Comparator<GameEvent>() {
+            public int compare(GameEvent lhs, GameEvent rhs) {
+                return lhs.getDateTime().compareTo(rhs.getDateTime());
+            }
+        }).reverse().sortedCopy(context.getGameStorage().getGame().getEvents());
+        for (GameEvent event: games) {
             Map<String, String> row = new HashMap<String, String>();
             row.put("description", event.getHumanReadableDescr());
             row.put("time", event.getDateTime().toString(DateTimeFormat.shortDateTime()));

@@ -3,13 +3,16 @@ package com.hitman.client.model;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.location.Location;
+import com.google.common.base.Function;
 import com.hitman.client.Util;
+import com.hitman.client.event.KillEvent;
 import com.hitman.client.http.Either;
 import com.hitman.client.http.HTTPMethod;
 import org.apache.http.HttpResponse;
 import org.apache.http.entity.mime.FormBodyPart;
 import org.apache.http.entity.mime.content.FileBody;
 import org.apache.http.entity.mime.content.StringBody;
+import org.joda.time.DateTime;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -114,4 +117,21 @@ public class PlayingContext extends LoggedInContext {
         return resp;
     }
 
+    public Either<Object, Boolean> sendKillCode(String code) {
+        Map<String,String> params = new HashMap<String, String>();
+        params.put("kill_code", code);
+        return Util.collapse(
+                 execNormalRequest("/games/kill", params, HTTPMethod.POST, CONTENT_TYPE_ANY)
+               .bindRight(expectCodes(200, 403)))
+               .bindRight(new Function<HttpResponse, Boolean>() {
+                   public Boolean apply(HttpResponse response) {
+                       boolean rightCode = response.getStatusLine().getStatusCode() == 200;
+                       if (rightCode) {
+                           getGameStorage().addEvent(new KillEvent(DateTime.now(),
+                                   getSessionStorage().getCurrentTarget()));
+                       }
+                       return rightCode;
+                   }
+               });
+    }
 }

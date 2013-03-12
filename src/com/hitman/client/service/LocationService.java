@@ -32,7 +32,8 @@ public class LocationService extends Service {
         try {
             context = PlayingContext.readFromStorage(LoggedInContext.readFromStorage(new LoggedOutContext(this)));
         } catch (StorageException e) {
-            throw new RuntimeException(e);
+            Log.i(TAG, "no game found; stopping");
+            stopSelf();
         }
         // set up location listener....
         manager = (LocationManager) getSystemService(LOCATION_SERVICE);

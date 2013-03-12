@@ -127,9 +127,14 @@ public class TakePictures extends Activity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         assert requestCode == TAKE_PICTURE_REQ;
-        assert resultCode == RESULT_OK;
-        Bitmap newImage = (Bitmap) data.getExtras().get("data");
-        photos.add(newImage);
+        switch (resultCode) {
+            case RESULT_OK:
+                Bitmap newImage = (Bitmap) data.getExtras().get("data");
+                photos.add(newImage);
+                break;
+            case RESULT_CANCELED:
+                return;
+        }
     }
 
     // http://developer.android.com/guide/topics/ui/layout/gridview.html

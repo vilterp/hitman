@@ -35,7 +35,9 @@ public class GameStorage {
                 .registerSubtype(GameStartedEvent.class)
                 .registerSubtype(StationaryLocationEvent.class)
                 .registerSubtype(MovingLocationEvent.class)
-                .registerSubtype(TakePhotoEvent.class);
+                .registerSubtype(TakePhotoEvent.class)
+                .registerSubtype(PhotoReceivedEvent.class)
+                .registerSubtype(KillEvent.class);
         gson = new GsonBuilder()
                 .registerTypeAdapter(DateTime.class, new DateTimeTypeConverter())
                 .registerTypeAdapterFactory(factory)
@@ -57,6 +59,7 @@ public class GameStorage {
             try {
                 FileInputStream input = context.openFileInput(GAME_FILE_NAME);
                 Game game = gson.fromJson(new InputStreamReader(input), Game.class);
+                assert game != null;
                 input.close();
                 return new GameStorage(context, game);
             } catch (IOException e) {
@@ -111,6 +114,11 @@ public class GameStorage {
         game.setName(updated.getName());
         game.setLocation(updated.getLocation());
         game.setStartDate(updated.getStartDateTime());
+        save();
+    }
+
+    public void setKillCode(String killCode) {
+        getGame().setKillCode(killCode);
         save();
     }
 

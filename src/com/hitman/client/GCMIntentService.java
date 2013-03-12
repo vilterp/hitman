@@ -10,9 +10,7 @@ import android.os.AsyncTask;
 import android.util.Log;
 import android.widget.Toast;
 import com.google.android.gcm.GCMBaseIntentService;
-import com.hitman.client.activity.ShowGame;
-import com.hitman.client.activity.Startup;
-import com.hitman.client.activity.TakePictures;
+import com.hitman.client.activity.*;
 import com.hitman.client.event.*;
 import com.hitman.client.http.Either;
 import com.hitman.client.http.Left;
@@ -20,6 +18,8 @@ import com.hitman.client.http.Right;
 import com.hitman.client.http.WrongSideException;
 import com.hitman.client.model.*;
 import org.joda.time.DateTime;
+
+import java.net.URI;
 
 public class GCMIntentService extends GCMBaseIntentService {
 
@@ -33,6 +33,8 @@ public class GCMIntentService extends GCMBaseIntentService {
     private static final int GAME_STARTED_MSGID = 4;
     private static final int JOIN_MSGID = 5;
     private static final int TAKE_PHTOS_MSGID = 6;
+    private static final int PHOTO_RECEIVED_MSGID = 7;
+    private static final int KILLED_MSGID = 8;
 
     public GCMIntentService() {
         super(Startup.SENDER_ID);
@@ -46,15 +48,17 @@ public class GCMIntentService extends GCMBaseIntentService {
         } else if(type.equals("player_join")) {
             evt = new JoinEvent(DateTime.now(), intent.getStringExtra("name"));
         } else if (type.equals("game_start")) {
-            evt = new GameStartedEvent(DateTime.now(), intent.getStringExtra("target"));
+            evt = new GameStartedEvent(DateTime.now(), intent.getStringExtra("target"), intent.getStringExtra("kill_code"));
         } else if(type.equals("location_moving")) {
             evt = new MovingLocationEvent(DateTime.now(), intent.getStringExtra("locationFrom"), intent.getStringExtra("locationTo"));
-        } else if(type.equals("reassigned")) {
+        } else if(type.equals("new_target")) {
             evt = new TargetAssignedEvent(DateTime.now(), intent.getStringExtra("target"));
         } else if(type.equals("killed")) {
             evt = new KilledEvent(DateTime.now());
         } else if(type.equals("take_photo")) {
             evt = new TakePhotoEvent(DateTime.now(), Integer.parseInt(intent.getStringExtra("photoset")));
+        } else if(type.equals("photo_received")) {
+            evt = new PhotoReceivedEvent(DateTime.now(), intent.getStringExtra("url"));
         } else {
             return new Left<Exception, GameEvent>(new Exception("unrecognized event type " + type));
         }
@@ -70,7 +74,8 @@ public class GCMIntentService extends GCMBaseIntentService {
         try {
             context = PlayingContext.readFromStorage(LoggedInContext.readFromStorage(new LoggedOutContext(this)));
         } catch (StorageException e) {
-            e.printStackTrace();
+            Log.i(TAG, "playing context not found; stopping");
+            stopSelf();
         }
 
         // TODO: checkForNull or something
@@ -85,6 +90,7 @@ public class GCMIntentService extends GCMBaseIntentService {
             } else if(evt instanceof TargetAssignedEvent) {
                 if(evt instanceof GameStartedEvent) {
                     showNotification("Game Started!", evt.getHumanReadableDescr(), GAME_STARTED_MSGID, showGameIntent);
+                    context.getGameStorage().setKillCode(((GameStartedEvent)evt).getKillCode());
                 } else {
                     showNotification("Target Assigned", evt.getHumanReadableDescr(), TARGET_REASSIGNED_MSGID, showGameIntent);
                 }
@@ -92,7 +98,9 @@ public class GCMIntentService extends GCMBaseIntentService {
             } else if(evt instanceof JoinEvent) {
                 showNotification("New Player Joined", evt.getHumanReadableDescr(), JOIN_MSGID, showGameIntent);
             } else if(evt instanceof KilledEvent) {
-                Log.i(TAG, "you were killed");
+                Intent gameListIntent = new Intent(this, GameList.class);
+                showNotification("You Were Killed!", "Better luck next time.", KILLED_MSGID, gameListIntent);
+                context.leaveGame();
             } else if(evt instanceof TakePhotoEvent) {
                 Intent takePhotos = new Intent(this, TakePictures.class);
                 takePhotos.putExtra("photoset_id", ((TakePhotoEvent) evt).getPhotoSetId());
@@ -101,6 +109,11 @@ public class GCMIntentService extends GCMBaseIntentService {
                             " they'll be sent to that person's assassin" +
                             " and will help them figure out who their target is.";
                 showNotification("Take Photos!", msg, TAKE_PHTOS_MSGID, takePhotos);
+            } else if(evt instanceof PhotoReceivedEvent) {
+                Intent viewPhoto = new Intent(this, ViewPhoto.class);
+                viewPhoto.putExtra("photo_event", evt);
+                String msg = "Photo of your target received! Click to view.";
+                showNotification("Photo Received", msg, PHOTO_RECEIVED_MSGID, viewPhoto);
             }
             // update model, send broadcast
             final PlayingContext finalContext = context;
@@ -130,7 +143,8 @@ public class GCMIntentService extends GCMBaseIntentService {
         Notification.Builder mBuilder = new Notification.Builder(this)
                                                     .setContentTitle(title)
                                                     .setContentText(body)
-                                                    .setSmallIcon(R.drawable.ic_launcher);
+                                                    .setSmallIcon(R.drawable.ic_launcher)
+                                                    .setAutoCancel(true);
         // The stack builder object will contain an artificial back stack for the
         // started Activity.
         // This ensures that navigating backward from the Activity leads out of
@@ -140,6 +154,7 @@ public class GCMIntentService extends GCMBaseIntentService {
         stackBuilder.addParentStack(ShowGame.class);
         // Adds the Intent that starts the Activity to the top of the stack
         stackBuilder.addNextIntent(resultIntent);
+        stackBuilder.addNextIntent(new Intent(this, GameList.class));
         PendingIntent resultPendingIntent =
                 stackBuilder.getPendingIntent(
                     0,

@@ -10,6 +10,10 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.*;
+import com.google.common.base.Function;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Collections2;
+import com.google.common.collect.Ordering;
 import com.hitman.client.R;
 import com.hitman.client.Util;
 import com.hitman.client.http.Either;
@@ -175,8 +179,13 @@ public class GameList extends Activity implements JoinGameDialogFragment.JoinGam
         int[] to = {R.id.game_list_item_name, R.id.game_list_item_location,
                 R.id.game_list_item_players, R.id.game_list_item_startdate};
         List<Map<String, String>> data = new ArrayList<Map<String, String>>();
+        Collection<Game> gamesYetToStart = Collections2.filter(games, new Predicate<Game>() {
+            public boolean apply(Game game) {
+                return game.getStartDateTime().isAfterNow();
+            }
+        });
         int ind = 0;
-        for (Game game : games) {
+        for (Game game : gamesYetToStart) {
             Map<String, String> row = new HashMap<String, String>();
             // TODO: nicer formatting
             row.put("name", game.getName());

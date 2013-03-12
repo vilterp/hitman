@@ -4,8 +4,15 @@ import org.joda.time.DateTime;
 
 public class GameStartedEvent extends TargetAssignedEvent {
 
-    public GameStartedEvent(DateTime dateTime, String newTarget) {
+    private final String killCode;
+
+    public GameStartedEvent(DateTime dateTime, String newTarget, String killCode) {
         super(dateTime, newTarget);
+        this.killCode = killCode;
+    }
+
+    public String getKillCode() {
+        return killCode;
     }
 
     @Override
