@@ -113,7 +113,7 @@ public class GCMIntentService extends GCMBaseIntentService {
                 Intent viewPhoto = new Intent(this, ViewPhoto.class);
                 viewPhoto.putExtra("photo_event", evt);
                 String msg = "Photo of your target received! Click to view.";
-                showNotification("Photo Received", msg, PHOTO_RECEIVED_MSGID, viewPhoto);
+                showNotification("Photo Received", msg, ((PhotoReceivedEvent)evt).getPath().hashCode(), viewPhoto);
             } else if(evt instanceof GameWonEvent) {
                 showNotification("You Won!", "Congratulations.", YOU_WON_MSGID, new Intent(this, GameList.class));
             }
