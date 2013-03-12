@@ -12,12 +12,16 @@
                   android:text="Game Name"
                   style="@android:style/TextAppearance.DeviceDefault.SearchResult.Title"
                   android:layout_gravity="left"/>
-        <TextView android:id="@+id/game_list_item_startdate"
-                  android:layout_height="wrap_content"
-                  android:layout_width="wrap_content"
-                  android:text="Tomorrow at 12am"
-                  style="@android:style/TextAppearance.DeviceDefault.SearchResult.Subtitle"
-                  android:layout_gravity="right"/>
+
+        <TextView
+            android:id="@+id/game_list_item_startdate"
+            style="@android:style/TextAppearance.DeviceDefault.SearchResult.Subtitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="right"
+            android:gravity="right"
+            android:text="Tomorrow at 12am" />
+
     </LinearLayout>
 
     <LinearLayout
