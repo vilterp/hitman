@@ -64,7 +64,7 @@ public class PlayingContext extends LoggedInContext {
         Map<String,String> params = new HashMap<String,String>();
         params.put("location", String.format("%f,%f", loc.getLatitude(), loc.getLongitude()));
         return Util.collapse(
-                 execNormalRequest("/games/sensors/location/create",
+                 execNormalRequest("/games/sensors/location/create/",
                          params, HTTPMethod.POST, CONTENT_TYPE_ANY)
                .bindRight(expectCodes(201)));
     }
@@ -111,7 +111,7 @@ public class PlayingContext extends LoggedInContext {
         formBodyParts.add(new FormBodyPart("photo", new FileBody(file)));
         Either<Object,HttpResponse> resp =
                 Util.collapse(
-                  execUploadRequest("/games/sensors/camera/upload", formBodyParts, HTTPMethod.POST, CONTENT_TYPE_ANY)
+                  execUploadRequest("/games/sensors/camera/upload/", formBodyParts, HTTPMethod.POST, CONTENT_TYPE_ANY)
                 .bindRight(expectCodes(201)));
         getAndroidContext().deleteFile(PHOTO_TEMP_FILE);
         return resp;
@@ -121,7 +121,7 @@ public class PlayingContext extends LoggedInContext {
         Map<String,String> params = new HashMap<String, String>();
         params.put("kill_code", code);
         return Util.collapse(
-                 execNormalRequest("/games/kill", params, HTTPMethod.POST, CONTENT_TYPE_ANY)
+                 execNormalRequest("/games/kill/", params, HTTPMethod.POST, CONTENT_TYPE_ANY)
                .bindRight(expectCodes(200, 403)))
                .bindRight(new Function<HttpResponse, Boolean>() {
                    public Boolean apply(HttpResponse response) {

@@ -37,7 +37,8 @@ public class GameStorage {
                 .registerSubtype(MovingLocationEvent.class)
                 .registerSubtype(TakePhotoEvent.class)
                 .registerSubtype(PhotoReceivedEvent.class)
-                .registerSubtype(KillEvent.class);
+                .registerSubtype(KillEvent.class)
+                .registerSubtype(GameWonEvent.class);
         gson = new GsonBuilder()
                 .registerTypeAdapter(DateTime.class, new DateTimeTypeConverter())
                 .registerTypeAdapterFactory(factory)
@@ -123,7 +124,12 @@ public class GameStorage {
     }
 
     public Game getGame() {
+        checkCleared();
         return game;
+    }
+
+    public boolean isActive() {
+        return !cleared;
     }
 
     private void save() {

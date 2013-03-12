@@ -6,9 +6,12 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.util.Log;
 import android.util.Pair;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,12 +22,15 @@ import com.hitman.client.http.Right;
 import com.hitman.client.model.*;
 import org.apache.http.HttpResponse;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TakePictures extends Activity {
+public class TakePhotos extends Activity {
 
     private static final int TAKE_PICTURE_REQ = 0;
+    private static final String TAG = "HITMAN-TakePhotos";
     private Button takeAnother;
     private Button imDone;
     private GridView photosGrid;
@@ -38,7 +44,7 @@ public class TakePictures extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.take_pictures);
+        setContentView(R.layout.take_photos);
         // get context
         photoSetId = getIntent().getIntExtra("photoset_id", -1);
         try {
@@ -93,7 +99,7 @@ public class TakePictures extends Activity {
 
                     @Override
                     protected void onPostExecute(Pair<Integer, Integer> stats) {
-                        Toast.makeText(TakePictures.this, String.format("%d/%d pictures uploaded successfully.",
+                        Toast.makeText(TakePhotos.this, String.format("%d/%d pictures uploaded successfully.",
                                 stats.first, stats.second), Toast.LENGTH_LONG).show();
                         finish();
                     }
@@ -149,7 +155,7 @@ public class TakePictures extends Activity {
             ImageView imageView;
             if(convertView == null) {
                 imageView = new ImageView(this.getContext());
-                imageView.setLayoutParams(new GridView.LayoutParams(85, 85));
+                imageView.setLayoutParams(new GridView.LayoutParams(200, 200));
                 imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
                 imageView.setPadding(8, 8, 8, 8);
             } else {

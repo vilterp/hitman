@@ -52,7 +52,11 @@
                   android:label="@string/app_name">
         </activity>
 
-        <activity android:name=".activity.TakePictures"
+        <activity android:name=".activity.TakePhotos"
+                  android:label="@string/app_name">
+        </activity>
+
+        <activity android:name=".activity.ViewPhoto"
                   android:label="@string/app_name">
         </activity>
 

@@ -81,12 +81,12 @@ public class LoggedInContext extends HitmanContext {
 
     public Either<Object,Game> getGame(int id) {
         return Util.collapse(
-                getJsonObjectExpectCodes(String.format("/games/%d", id), null, HTTPMethod.GET, 200)
+                getJsonObjectExpectCodes(String.format("/games/%d/", id), null, HTTPMethod.GET, 200)
                         .bindRight(gameFromJsonObject));
     }
     
     public Either<Object,Set<Game>> getGameList() {
-        return getJsonArrayExpectCodes("/games", null, HTTPMethod.GET, 200).bindRight(new Function<JSONArray, Set<Game>>() {
+        return getJsonArrayExpectCodes("/games/", null, HTTPMethod.GET, 200).bindRight(new Function<JSONArray, Set<Game>>() {
             public Set<Game> apply(JSONArray jsonArray) {
                 Set<Game> games = new HashSet<Game>();
                 for (int i = 0; i < jsonArray.length(); i++) {
@@ -115,7 +115,7 @@ public class LoggedInContext extends HitmanContext {
     }
 
     public Either<Object,Either<AlreadyInGameException,PlayingContext>> joinGame(final Game game) {
-        return getJsonObjectExpectCodes(String.format("/games/%d/join", game.getId()), null, HTTPMethod.PUT, 200, 403)
+        return getJsonObjectExpectCodes(String.format("/games/%d/join/", game.getId()), null, HTTPMethod.PUT, 200, 403)
                 .bindRight(new Function<JSONObject, Either<AlreadyInGameException, PlayingContext>>() {
                     public Either<AlreadyInGameException, PlayingContext> apply(JSONObject jsonObject) {
                         try {

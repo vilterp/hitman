@@ -153,7 +153,7 @@ public abstract class AuthContext {
 
     private String getUriForPath(String path) {
         assert path.charAt(0) == '/';
-        return String.format("http://%s:%d%s/", getDomain(), getPort(), path);
+        return String.format("http://%s:%d%s", getDomain(), getPort(), path);
     }
 
     public Either<IOException, HttpResponse> execUploadRequest(String path, List<FormBodyPart> parts,
