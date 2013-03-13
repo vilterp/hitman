@@ -68,20 +68,20 @@ public abstract class AuthContext {
 
     public Either<Object,JSONObject> getJsonObjectExpectCodes(String path, Map<String,String> params,
                                                               HTTPMethod method, int... codes) {
-        return Util.collapse(
-                 Util.collapse(
-                   Util.collapse(
-                     execNormalRequest(path, params, method, CONTENT_TYPE_JSON)
-                   .bindRight(expectCodes(codes)))
-                 .bindRight(getBody))
-               .bindRight(Util.parseJsonObject));
+        return Either.collapse(
+                Either.collapse(
+                        Either.collapse(
+                                execNormalRequest(path, params, method, CONTENT_TYPE_JSON)
+                                        .bindRight(expectCodes(codes)))
+                                .bindRight(getBody))
+                        .bindRight(Util.parseJsonObject));
     }
 
     public Either<Object,JSONArray> getJsonArrayExpectCodes(String path, Map<String,String> params,
                                                              HTTPMethod method, int... codes) {
-        return Util.collapse(
-                Util.collapse(
-                        Util.collapse(
+        return Either.collapse(
+                Either.collapse(
+                        Either.collapse(
                                 execNormalRequest(path, params, method, CONTENT_TYPE_JSON)
                                         .bindRight(expectCodes(codes)))
                                 .bindRight(getBody))
@@ -106,11 +106,11 @@ public abstract class AuthContext {
     };
 
     public Either<Object,Bitmap> getBitmap(String path) {
-        return Util.collapse(
-                 Util.collapse(
-                   execNormalRequest(path, null, HTTPMethod.GET, CONTENT_TYPE_ANY)
-                 .bindRight(expectCodes(200)))
-               .bindRight(getResultInputStream))
+        return Either.collapse(
+                Either.collapse(
+                        execNormalRequest(path, null, HTTPMethod.GET, CONTENT_TYPE_ANY)
+                                .bindRight(expectCodes(200)))
+                        .bindRight(getResultInputStream))
                .bindRight(decodeBitmap);
     }
 
