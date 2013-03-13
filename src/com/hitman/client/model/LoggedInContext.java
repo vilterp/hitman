@@ -2,7 +2,6 @@ package com.hitman.client.model;
 
 import android.content.Context;
 import com.google.common.base.Function;
-import com.hitman.client.Util;
 import com.hitman.client.event.GameEvent;
 import com.hitman.client.http.*;
 import org.apache.http.Header;
@@ -80,7 +79,7 @@ public class LoggedInContext extends HitmanContext {
         };
 
     public Either<Object,Game> getGame(int id) {
-        return Util.collapse(
+        return Either.collapse(
                 getJsonObjectExpectCodes(String.format("/games/%d/", id), null, HTTPMethod.GET, 200)
                         .bindRight(gameFromJsonObject));
     }
@@ -109,9 +108,9 @@ public class LoggedInContext extends HitmanContext {
         params.put("name", game.getName());
         params.put("start_time", game.getStartDateTime().toString(ISODateTimeFormat.dateTime()));
         params.put("location", game.getLocation().formatCommaSep());
-        return Util.collapse(
-                 getJsonObjectExpectCodes("/games/create/", params, HTTPMethod.POST, 201)
-               .bindRight(gameFromJsonObject));
+        return Either.collapse(
+                getJsonObjectExpectCodes("/games/create/", params, HTTPMethod.POST, 201)
+                        .bindRight(gameFromJsonObject));
     }
 
     public Either<Object,Either<AlreadyInGameException,PlayingContext>> joinGame(final Game game) {

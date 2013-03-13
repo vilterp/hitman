@@ -41,13 +41,4 @@ public class Util {
         Toast.makeText(ctx, "An error occured. Try again?", Toast.LENGTH_LONG).show();
     }
 
-    public static <A,B,C> Either<Object,C> collapse(Either<A, Either<B, C>> either) {
-        try {
-            Either<B, C> right = either.getRight();
-            C rightRight = right.getRight();
-            return new Right<Object, C>(rightRight);
-        } catch (WrongSideException e) {
-            return new Left<Object, C>(e.getEither().getValue());
-        }
-    }
 }

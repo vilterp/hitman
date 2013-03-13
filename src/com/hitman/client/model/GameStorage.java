@@ -10,6 +10,7 @@ import org.joda.time.DateTime;
 import java.io.*;
 import java.lang.reflect.Type;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 
 public class GameStorage {
@@ -30,7 +31,6 @@ public class GameStorage {
             RuntimeTypeAdapterFactory.of(GameEvent.class)
                 .registerSubtype(JoinEvent.class)
                 .registerSubtype(YouJoinedEvent.class)
-                .registerSubtype(KilledEvent.class)
                 .registerSubtype(TargetAssignedEvent.class)
                 .registerSubtype(GameStartedEvent.class)
                 .registerSubtype(StationaryLocationEvent.class)
@@ -128,10 +128,6 @@ public class GameStorage {
         return game;
     }
 
-    public boolean isActive() {
-        return !cleared;
-    }
-
     private void save() {
         checkCleared();
         assert game.getStartDateTime() != null;
@@ -156,6 +152,22 @@ public class GameStorage {
         if(cleared) {
             throw new IllegalStateException("GameStorage cleared");
         }
+    }
+
+    public void removePlayerByName(String victim) {
+        Iterator<Player> iter = getGame().getPlayers().iterator();
+        while(iter.hasNext()) {
+            Player player = iter.next();
+            if(player.getNickname().equals(victim)) {
+                iter.remove();
+                return;
+            }
+        }
+        throw new IllegalArgumentException(String.format("%s wasn't in player set", victim));
+    }
+
+    public boolean isActive() {
+        return hasGame(context);
     }
 
 }

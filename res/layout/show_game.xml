@@ -5,6 +5,21 @@
               android:layout_width="fill_parent"
               android:layout_height="fill_parent">
 
+    <!-- you won -->
+    <LinearLayout android:orientation="horizontal"
+                  android:id="@+id/show_game_you_won_ind"
+                  android:layout_height="wrap_content"
+                  android:layout_width="fill_parent">
+        <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Congratulations, You Won!"
+                android:layout_gravity="center"
+                android:textSize="30sp"
+                android:textColor="#00ac07"/>
+    </LinearLayout>
+
+    <!-- game name -->
     <LinearLayout
             android:orientation="horizontal"
             android:layout_width="fill_parent"
@@ -21,6 +36,7 @@
                   android:textStyle="bold" android:textSize="20sp"/>
     </LinearLayout>
 
+    <!-- num players -->
     <LinearLayout android:orientation="horizontal" android:layout_width="fill_parent"
                   android:layout_height="wrap_content">
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Players Left:  "
@@ -29,6 +45,7 @@
                   android:id="@+id/show_game_num_players_ind" android:textStyle="bold" android:textSize="20sp"/>
     </LinearLayout>
 
+    <!-- game running info -->
     <LinearLayout
             android:orientation="vertical"
             android:layout_width="fill_parent"
@@ -65,6 +82,7 @@
         </LinearLayout>
     </LinearLayout>
 
+    <!-- countdown -->
     <LinearLayout android:orientation="vertical"
                   android:layout_width="fill_parent"
                   android:layout_height="wrap_content"
@@ -85,12 +103,15 @@
                 android:textColor="#ff000c"/>
     </LinearLayout>
 
+    <!-- waiting ind -->
     <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Game started. Waiting for server to assign target."
             android:id="@+id/show_game_countdown_waiting_ind" android:layout_gravity="center" android:textColor="#009a10"
             android:visibility="gone"/>
+
+    <!-- events list -->
     <ListView android:layout_height="fill_parent"
               android:layout_width="fill_parent"
               android:id="@+id/show_game_events_list" android:visibility="visible"/>

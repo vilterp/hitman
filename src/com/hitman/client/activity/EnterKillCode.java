@@ -1,6 +1,7 @@
 package com.hitman.client.activity;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.View;
@@ -53,6 +54,7 @@ public class EnterKillCode extends Activity {
                                 Toast.makeText(EnterKillCode.this,
                                     "Kill confirmed. You will be assigned a new target shortly.",
                                     Toast.LENGTH_LONG).show();
+                                setResult(RESULT_OK, new Intent());
                                 finish();
                             } else {
                                 Toast.makeText(EnterKillCode.this,

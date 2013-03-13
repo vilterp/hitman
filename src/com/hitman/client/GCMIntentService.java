@@ -33,6 +33,7 @@ public class GCMIntentService extends GCMBaseIntentService {
     private static final int PHOTO_RECEIVED_MSGID = 7;
     private static final int KILLED_MSGID = 8;
     private static final int YOU_WON_MSGID = 9;
+    private static final int GAME_CANCELLED_MSGID = 10;
 
     public GCMIntentService() {
         super(Startup.SENDER_ID);
@@ -52,13 +53,15 @@ public class GCMIntentService extends GCMBaseIntentService {
         } else if(type.equals("new_target")) {
             evt = new TargetAssignedEvent(DateTime.now(), intent.getStringExtra("target"));
         } else if(type.equals("killed")) {
-            evt = new KilledEvent(DateTime.now());
+            evt = new KillEvent(DateTime.now(), intent.getStringExtra("victim"));
         } else if(type.equals("take_photo")) {
             evt = new TakePhotoEvent(DateTime.now(), Integer.parseInt(intent.getStringExtra("photoset")));
         } else if(type.equals("photo_received")) {
             evt = new PhotoReceivedEvent(DateTime.now(), intent.getStringExtra("url"));
         } else if(type.equals("game_end")) {
             evt = new GameWonEvent(DateTime.now());
+        } else if(type.equals("game_canceled")) {
+            evt = new GameCanceledEvent(DateTime.now());
         } else {
             return new Left<Exception, GameEvent>(new Exception("unrecognized event type " + type));
         }
@@ -97,10 +100,23 @@ public class GCMIntentService extends GCMBaseIntentService {
                 context.getSessionStorage().setCurrentTarget(((TargetAssignedEvent)evt).getNewTarget());
             } else if(evt instanceof JoinEvent) {
                 showNotification("New Player Joined", evt.getHumanReadableDescr(), JOIN_MSGID, showGameIntent);
-            } else if(evt instanceof KilledEvent) {
-                Intent gameListIntent = new Intent(this, GameList.class);
-                showNotification("You Were Killed!", "Better luck next time.", KILLED_MSGID, gameListIntent);
-                context.leaveGame();
+            } else if(evt instanceof KillEvent) {
+                String currentUser = null;
+                try {
+                    currentUser = context.getSessionStorage().readLoginCredentials().getUsername();
+                } catch (SessionStorage.NoCredentialsException e) {
+                    throw new RuntimeException(e);
+                }
+                KillEvent killEvent = (KillEvent) evt;
+                if(killEvent.getVictim().equals(currentUser)) {
+                    // current user killed
+                    Intent gameListIntent = new Intent(this, GameList.class);
+                    showNotification("You Were Killed!", "Better luck next time.", KILLED_MSGID, gameListIntent);
+                    context.leaveGame();
+                } else {
+                    // other user killed
+                    context.getGameStorage().removePlayerByName(killEvent.getVictim());
+                }
             } else if(evt instanceof TakePhotoEvent) {
                 Intent takePhotos = new Intent(this, TakePhotos.class);
                 takePhotos.putExtra("photoset_id", ((TakePhotoEvent) evt).getPhotoSetId());
@@ -113,9 +129,14 @@ public class GCMIntentService extends GCMBaseIntentService {
                 Intent viewPhoto = new Intent(this, ViewPhoto.class);
                 viewPhoto.putExtra("photo_event", evt);
                 String msg = "Photo of your target received! Click to view.";
-                showNotification("Photo Received", msg, ((PhotoReceivedEvent)evt).getPath().hashCode(), viewPhoto);
+                showNotification("Photo Received", msg, ((PhotoReceivedEvent) evt).getPath().hashCode(), viewPhoto);
             } else if(evt instanceof GameWonEvent) {
                 showNotification("You Won!", "Congratulations.", YOU_WON_MSGID, new Intent(this, GameList.class));
+                context.leaveGame();
+            } else if(evt instanceof GameCanceledEvent) {
+                showNotification("Game Canceled", evt.getHumanReadableDescr(), GAME_CANCELLED_MSGID,
+                        new Intent(this, GameList.class));
+                context.leaveGame();
             }
             // update model, send broadcast
             if(context.getGameStorage().isActive()) {

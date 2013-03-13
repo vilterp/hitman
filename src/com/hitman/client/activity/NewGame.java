@@ -68,7 +68,7 @@ public class NewGame extends Activity {
                                 doInBackground(Game... params) {
                         assert params.length == 0;
                         Game theGame = params[0];
-                        return Util.collapse(context.createGame(theGame).bindRight(
+                        return Either.collapse(context.createGame(theGame).bindRight(
                                 new Function<Game, Either<Object, Either<LoggedInContext.AlreadyInGameException, PlayingContext>>>() {
                                     public Either<Object, Either<LoggedInContext.AlreadyInGameException, PlayingContext>> apply(Game game) {
                                         return context.joinGame(game);

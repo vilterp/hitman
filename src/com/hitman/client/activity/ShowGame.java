@@ -16,6 +16,7 @@ import android.widget.*;
 import com.google.common.collect.Ordering;
 import com.hitman.client.GCMIntentService;
 import com.hitman.client.R;
+import com.hitman.client.event.GameCanceledEvent;
 import com.hitman.client.event.GameEvent;
 import com.hitman.client.event.GameStartedEvent;
 import com.hitman.client.event.GameWonEvent;
@@ -31,6 +32,7 @@ import java.util.*;
 public class ShowGame extends Activity {
 
     private static final String TAG = "HITMAN-ShowGame";
+    private static final int ENTER_KILL_CODE = 1;
     private PlayingContext context;
 
     private State state;
@@ -49,6 +51,8 @@ public class ShowGame extends Activity {
     private Button killedTargetButton;
     private Button beenKilledButton;
 
+    private View youWon;
+
     private ListView gameEventsList;
 
     private BroadcastReceiver receiver;
@@ -56,7 +60,7 @@ public class ShowGame extends Activity {
     public enum State {
         COUNTDOWN,
         WAITING_FOR_TARGET,
-        RUNNING
+        WON, RUNNING
         // OVER?
     }
     
@@ -66,13 +70,17 @@ public class ShowGame extends Activity {
         setContentView(R.layout.show_game);
         try {
             context = PlayingContext.readFromStorage(LoggedInContext.readFromStorage(new LoggedOutContext(this)));
-        } catch (StorageException e) {
+        } catch (GameStorage.NoGameException e) {
+            Log.d(TAG, "no game...");
+        } catch (SessionStorage.NoCredentialsException e) {
             throw new RuntimeException(e);
         }
         // VIEW REFS
         // countdown
         countdownContainer = (LinearLayout) findViewById(R.id.show_game_countdown_container);
         countdownTimer = (TextView) findViewById(R.id.show_game_countdown_timer);
+        // won
+        youWon = findViewById(R.id.show_game_you_won_ind);
         // waiting
         waitingInd = (TextView) findViewById(R.id.show_game_countdown_waiting_ind);
         // info
@@ -97,13 +105,20 @@ public class ShowGame extends Activity {
         // update list when new game events come
         receiver = new BroadcastReceiver() {
             @Override
-            public void onReceive(Context context, Intent intent) {
-                reloadGameFromStorage();
+            public void onReceive(Context ctx, Intent intent) {
                 GameEvent evt = (GameEvent) intent.getSerializableExtra("event");
-                if(evt instanceof GameStartedEvent) {
-                    enterRunningState();
-                } else if(evt instanceof GameWonEvent) {
+                if(evt instanceof GameCanceledEvent) {
+                    Toast.makeText(ShowGame.this, evt.getHumanReadableDescr(), Toast.LENGTH_LONG).show();
                     finish();
+                } else if(evt instanceof GameWonEvent) {
+                    enterWonState();
+                } else {
+                    if(context.getGameStorage().isActive()) {
+                        reloadGameFromStorage();
+                    }
+                    if(evt instanceof GameStartedEvent) {
+                        enterRunningState();
+                    }
                 }
             }
         };
@@ -112,7 +127,7 @@ public class ShowGame extends Activity {
         killedTargetButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 Intent startEnterKillCode = new Intent(ShowGame.this, EnterKillCode.class);
-                startActivity(startEnterKillCode);
+                startActivityForResult(startEnterKillCode, ENTER_KILL_CODE);
             }
         });
         beenKilledButton.setOnClickListener(new View.OnClickListener() {
@@ -127,7 +142,9 @@ public class ShowGame extends Activity {
     @Override
     public void onResume() {
         super.onResume();
-        reloadGameFromStorage();
+        if(context.getGameStorage().isActive()) {
+            reloadGameFromStorage();
+        }
     }
 
     @Override
@@ -177,6 +194,7 @@ public class ShowGame extends Activity {
         waitingInd.setVisibility(View.GONE);
         gameRunningInfoContainer.setVisibility(View.GONE);
         playersLeftLabel.setText("Players joined:  ");
+        youWon.setVisibility(View.GONE);
         startTicker();
     }
 
@@ -186,6 +204,7 @@ public class ShowGame extends Activity {
         gameRunningInfoContainer.setVisibility(View.VISIBLE);
         waitingInd.setVisibility(View.GONE);
         playersLeftLabel.setText("Players left:  ");
+        youWon.setVisibility(View.GONE);
     }
 
     private void enterWaitingState() {
@@ -193,6 +212,15 @@ public class ShowGame extends Activity {
         countdownContainer.setVisibility(View.GONE);
         gameRunningInfoContainer.setVisibility(View.GONE);
         waitingInd.setVisibility(View.VISIBLE);
+        youWon.setVisibility(View.GONE);
+    }
+
+    private void enterWonState() {
+        enterState(State.WON);
+        countdownContainer.setVisibility(View.GONE);
+        gameRunningInfoContainer.setVisibility(View.GONE);
+        waitingInd.setVisibility(View.GONE);
+        youWon.setVisibility(View.VISIBLE);
     }
 
     private void setBasicInfo() {

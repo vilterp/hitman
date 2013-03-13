@@ -4,20 +4,20 @@ import org.joda.time.DateTime;
 
 public class KillEvent extends GameEvent {
 
-    private String target;
+    private String victim;
 
-    public KillEvent(DateTime dateTime, String target) {
+    public KillEvent(DateTime dateTime, String victim) {
         super(dateTime);
-        this.target = target;
+        this.victim = victim;
     }
 
-    public String getTarget() {
-        return target;
+    public String getVictim() {
+        return victim;
     }
 
     @Override
     public String getHumanReadableDescr() {
-        return String.format("You killed \"%s\".", target);
+        return String.format("You killed \"%s\".", victim);
     }
 
 }

@@ -4,7 +4,6 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.location.Location;
 import com.google.common.base.Function;
-import com.hitman.client.Util;
 import com.hitman.client.event.KillEvent;
 import com.hitman.client.http.Either;
 import com.hitman.client.http.HTTPMethod;
@@ -63,10 +62,10 @@ public class PlayingContext extends LoggedInContext {
         checkClosed();
         Map<String,String> params = new HashMap<String,String>();
         params.put("location", String.format("%f,%f", loc.getLatitude(), loc.getLongitude()));
-        return Util.collapse(
-                 execNormalRequest("/games/sensors/location/create/",
-                         params, HTTPMethod.POST, CONTENT_TYPE_ANY)
-               .bindRight(expectCodes(201)));
+        return Either.collapse(
+                execNormalRequest("/games/sensors/location/create/",
+                        params, HTTPMethod.POST, CONTENT_TYPE_ANY)
+                        .bindRight(expectCodes(201)));
     }
 
     public void leaveGame() {
@@ -110,9 +109,9 @@ public class PlayingContext extends LoggedInContext {
         }
         formBodyParts.add(new FormBodyPart("photo", new FileBody(file)));
         Either<Object,HttpResponse> resp =
-                Util.collapse(
-                  execUploadRequest("/games/sensors/camera/upload/", formBodyParts, HTTPMethod.POST, CONTENT_TYPE_ANY)
-                .bindRight(expectCodes(201)));
+                Either.collapse(
+                        execUploadRequest("/games/sensors/camera/upload/", formBodyParts, HTTPMethod.POST, CONTENT_TYPE_ANY)
+                                .bindRight(expectCodes(201)));
         getAndroidContext().deleteFile(PHOTO_TEMP_FILE);
         return resp;
     }
@@ -120,17 +119,12 @@ public class PlayingContext extends LoggedInContext {
     public Either<Object, Boolean> sendKillCode(String code) {
         Map<String,String> params = new HashMap<String, String>();
         params.put("kill_code", code);
-        return Util.collapse(
-                 execNormalRequest("/games/kill/", params, HTTPMethod.POST, CONTENT_TYPE_ANY)
-               .bindRight(expectCodes(200, 403)))
+        return Either.collapse(
+                execNormalRequest("/games/kill/", params, HTTPMethod.POST, CONTENT_TYPE_ANY)
+                        .bindRight(expectCodes(200, 403)))
                .bindRight(new Function<HttpResponse, Boolean>() {
                    public Boolean apply(HttpResponse response) {
-                       boolean rightCode = response.getStatusLine().getStatusCode() == 200;
-                       if (rightCode) {
-                           getGameStorage().addEvent(new KillEvent(DateTime.now(),
-                                   getSessionStorage().getCurrentTarget()));
-                       }
-                       return rightCode;
+                       return response.getStatusLine().getStatusCode() == 200;
                    }
                });
     }

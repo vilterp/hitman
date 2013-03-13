@@ -13,7 +13,6 @@ import android.widget.*;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
-import com.google.common.collect.Ordering;
 import com.hitman.client.R;
 import com.hitman.client.Util;
 import com.hitman.client.http.Either;
@@ -104,7 +103,12 @@ public class GameList extends Activity implements JoinGameDialogFragment.JoinGam
             protected Either<Object,Either<LoggedInContext.AlreadyInGameException,PlayingContext>> doInBackground(Game... params) {
                 assert params.length == 1;
                 Game gameToJoin = params[0];
-                return context.joinGame(gameToJoin);
+                // get game again
+                return Either.collapse(context.getGame(gameToJoin.getId()).bindRight(new Function<Game, Either<Object, Either<LoggedInContext.AlreadyInGameException, PlayingContext>>>() {
+                    public Either<Object, Either<LoggedInContext.AlreadyInGameException, PlayingContext>> apply(Game updatedGame) {
+                        return context.joinGame(updatedGame);
+                    }
+                }));
             }
             @Override
             protected void onPostExecute(Either<Object,Either<LoggedInContext.AlreadyInGameException,PlayingContext>> res) {
