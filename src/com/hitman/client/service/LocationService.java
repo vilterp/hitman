@@ -18,10 +18,9 @@ import org.apache.http.HttpResponse;
 public class LocationService extends Service {
 
     private static final String TAG = "HITMAN-LocationService";
-    private static final long MIN_INTERVAL = 10 * 60 * 1000; // 1 minute in ms
+    private static final long MIN_INTERVAL = 1 * 60 * 1000; // 1 minute in ms
 //    private static final long MIN_INTERVAL = 10 * 1000;
 
-    private PlayingContext context;
     private LocationManager manager;
     private LocationListener listener;
 
@@ -29,12 +28,6 @@ public class LocationService extends Service {
     public void onCreate() {
         super.onCreate();
         Log.i(TAG, "onCreate");
-        try {
-            context = PlayingContext.readFromStorage(LoggedInContext.readFromStorage(new LoggedOutContext(this)));
-        } catch (StorageException e) {
-            Log.i(TAG, "no game found; stopping");
-            stopSelf();
-        }
         // set up location listener....
         manager = (LocationManager) getSystemService(LOCATION_SERVICE);
         listener = new LocationListener() {
@@ -42,12 +35,21 @@ public class LocationService extends Service {
                 new AsyncTask<Location, Void, Either<Object,HttpResponse>>() {
                     @Override
                     protected Either<Object,HttpResponse> doInBackground(Location... params) {
-                        return context.updateLocation(params[0]);
+                        try {
+                            PlayingContext context = PlayingContext.readFromStorage(
+                                    LoggedInContext.readFromStorage(new LoggedOutContext(LocationService.this)));
+                            return context.updateLocation(params[0]);
+                        } catch (StorageException e) {
+                            Log.i(TAG, "no game found; stopping");
+                            stopSelf();
+                            return new Left<Object, HttpResponse>("game stopped");
+                        }
                     }
                     protected void onPostExecute(Either<Object,HttpResponse> res) {
-                        Log.i(TAG, "sent location");
                         if(res instanceof Left) {
                             Log.e(TAG, "location update failed: " + res.getValue().toString());
+                        } else {
+                            Log.i(TAG, "sent location");
                         }
                     }
                 }.execute(location);

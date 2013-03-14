@@ -17,7 +17,7 @@ public class KillEvent extends GameEvent {
 
     @Override
     public String getHumanReadableDescr() {
-        return String.format("You killed \"%s\".", victim);
+        return String.format("\"%s\" was killed.", victim);
     }
 
 }

@@ -42,6 +42,8 @@ public class ShowGame extends Activity {
 
     private TextView waitingInd;
 
+    private TextView username;
+
     private LinearLayout gameRunningInfoContainer;
     private TextView gameNameInd;
     private TextView playersLeftLabel;
@@ -81,6 +83,8 @@ public class ShowGame extends Activity {
         countdownTimer = (TextView) findViewById(R.id.show_game_countdown_timer);
         // won
         youWon = findViewById(R.id.show_game_you_won_ind);
+        // username
+        username = (TextView) findViewById(R.id.show_game_username);
         // waiting
         waitingInd = (TextView) findViewById(R.id.show_game_countdown_waiting_ind);
         // info
@@ -226,6 +230,11 @@ public class ShowGame extends Activity {
     private void setBasicInfo() {
         Game game = context.getGameStorage().getGame();
         gameNameInd.setText(game.getName());
+        try {
+            username.setText(context.getSessionStorage().readLoginCredentials().getUsername());
+        } catch (SessionStorage.NoCredentialsException e) {
+            throw new RuntimeException(e);
+        }
         // +1 to account for current player
         playersLeftInd.setText(Integer.toString(game.getPlayers().size() + 1));
         String target = context.getSessionStorage().getCurrentTarget();

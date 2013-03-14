@@ -19,6 +19,21 @@
                 android:textColor="#00ac07"/>
     </LinearLayout>
 
+    <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content">
+        <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Signed in as "/>
+        <TextView android:layout_width="wrap_content"
+                  android:layout_height="wrap_content"
+                  android:text="username"
+                  android:id="@+id/show_game_username"
+                  android:textStyle="bold" android:textSize="20sp"/>
+    </LinearLayout>
+
     <!-- game name -->
     <LinearLayout
             android:orientation="horizontal"
