@@ -87,19 +87,19 @@ public class GCMIntentService extends GCMBaseIntentService {
             GameEvent evt = parseRes.getRight();
             Intent showGameIntent = new Intent(this, ShowGame.class);
             if(evt instanceof StationaryLocationEvent) {
-                showNotification("Target Update", evt.getHumanReadableDescr(), LOCATION_STATIONARY_MSGID, showGameIntent);
+                showNotification("Target Update", evt.getHumanReadableDescr(), LOCATION_STATIONARY_MSGID, null, showGameIntent);
             } else if(evt instanceof MovingLocationEvent) {
-                showNotification("Target Update", evt.getHumanReadableDescr(), LOCATION_MOVING_MSGID, showGameIntent);
+                showNotification("Target Update", evt.getHumanReadableDescr(), LOCATION_MOVING_MSGID, null, showGameIntent);
             } else if(evt instanceof TargetAssignedEvent) {
                 if(evt instanceof GameStartedEvent) {
-                    showNotification("Game Started!", evt.getHumanReadableDescr(), GAME_STARTED_MSGID, showGameIntent);
+                    showNotification("Game Started!", evt.getHumanReadableDescr(), GAME_STARTED_MSGID, null, showGameIntent);
                     context.getGameStorage().setKillCode(((GameStartedEvent)evt).getKillCode());
                 } else {
-                    showNotification("Target Assigned", evt.getHumanReadableDescr(), TARGET_REASSIGNED_MSGID, showGameIntent);
+                    showNotification("Target Assigned", evt.getHumanReadableDescr(), TARGET_REASSIGNED_MSGID, null, showGameIntent);
                 }
                 context.getSessionStorage().setCurrentTarget(((TargetAssignedEvent)evt).getNewTarget());
             } else if(evt instanceof JoinEvent) {
-                showNotification("New Player Joined", evt.getHumanReadableDescr(), JOIN_MSGID, showGameIntent);
+                showNotification("New Player Joined", evt.getHumanReadableDescr(), JOIN_MSGID, null, showGameIntent);
             } else if(evt instanceof KillEvent) {
                 String currentUser = null;
                 try {
@@ -111,7 +111,7 @@ public class GCMIntentService extends GCMBaseIntentService {
                 if(killEvent.getVictim().equals(currentUser)) {
                     // current user killed
                     Intent gameListIntent = new Intent(this, GameList.class);
-                    showNotification("You Were Killed!", "Better luck next time.", KILLED_MSGID, gameListIntent);
+                    showNotification("You Were Killed!", "Better luck next time.", KILLED_MSGID, null, gameListIntent);
                     context.leaveGame();
                 } else {
                     // other user killed
@@ -124,17 +124,17 @@ public class GCMIntentService extends GCMBaseIntentService {
                             " Discreetly take photos of people near you;" +
                             " they'll be sent to that person's assassin" +
                             " and will help them figure out who their target is.";
-                showNotification("Take Photos!", msg, TAKE_PHTOS_MSGID, takePhotos);
+                showNotification("Take Photos!", msg, TAKE_PHTOS_MSGID, null, takePhotos);
             } else if(evt instanceof PhotoReceivedEvent) {
                 Intent viewPhoto = new Intent(this, ViewPhoto.class);
                 viewPhoto.putExtra("photo_event", evt);
                 String msg = "Photo of your target received! Click to view.";
-                showNotification("Photo Received", msg, ((PhotoReceivedEvent) evt).getPath().hashCode(), viewPhoto);
+                showNotification("Photo Received", msg, PHOTO_RECEIVED_MSGID, ((PhotoReceivedEvent) evt).getPath(), viewPhoto);
             } else if(evt instanceof GameWonEvent) {
-                showNotification("You Won!", "Congratulations.", YOU_WON_MSGID, new Intent(this, GameList.class));
+                showNotification("You Won!", "Congratulations.", YOU_WON_MSGID, null, new Intent(this, GameList.class));
                 context.leaveGame();
             } else if(evt instanceof GameCanceledEvent) {
-                showNotification("Game Canceled", evt.getHumanReadableDescr(), GAME_CANCELLED_MSGID,
+                showNotification("Game Canceled", evt.getHumanReadableDescr(), GAME_CANCELLED_MSGID, null,
                         new Intent(this, GameList.class));
                 context.leaveGame();
             }
@@ -169,7 +169,7 @@ public class GCMIntentService extends GCMBaseIntentService {
         sendBroadcast(evtBroadcast);
     }
 
-    private void showNotification(String title, String body, int id, Intent resultIntent) {
+    private void showNotification(String title, String body, int id, String tag, Intent resultIntent) {
         PendingIntent contentIntent = PendingIntent.getActivity(this, 0, resultIntent, 0);
         Notification.Builder builder = new Notification.Builder(this)
                                                     .setContentTitle(title)
@@ -180,7 +180,10 @@ public class GCMIntentService extends GCMBaseIntentService {
         NotificationManager notificationManager =
             (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         // mId allows you to update the notification later on.
-        notificationManager.notify(id, builder.build());
+        if(tag == null) {
+            tag = title;
+        }
+        notificationManager.notify(tag, id, builder.build());
     }
 
     @Override
